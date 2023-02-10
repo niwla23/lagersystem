@@ -20,6 +20,8 @@ type Part struct {
 	CreatedAt time.Time `json:"createdAt,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// Description holds the value of the "description" field.
+	Description string `json:"description,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PartQuery when eager-loading is set.
 	Edges PartEdges `json:"edges"`
@@ -72,7 +74,7 @@ func (*Part) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case part.FieldID:
 			values[i] = new(sql.NullInt64)
-		case part.FieldName:
+		case part.FieldName, part.FieldDescription:
 			values[i] = new(sql.NullString)
 		case part.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -108,6 +110,12 @@ func (pa *Part) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				pa.Name = value.String
+			}
+		case part.FieldDescription:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field description", values[i])
+			} else if value.Valid {
+				pa.Description = value.String
 			}
 		}
 	}
@@ -157,6 +165,9 @@ func (pa *Part) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(pa.Name)
+	builder.WriteString(", ")
+	builder.WriteString("description=")
+	builder.WriteString(pa.Description)
 	builder.WriteByte(')')
 	return builder.String()
 }

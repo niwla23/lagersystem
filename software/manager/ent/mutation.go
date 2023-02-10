@@ -524,6 +524,7 @@ type PartMutation struct {
 	id                *int
 	createdAt         *time.Time
 	name              *string
+	description       *string
 	clearedFields     map[string]struct{}
 	tags              map[int]struct{}
 	removedtags       map[int]struct{}
@@ -707,6 +708,42 @@ func (m *PartMutation) OldName(ctx context.Context) (v string, err error) {
 // ResetName resets all changes to the "name" field.
 func (m *PartMutation) ResetName() {
 	m.name = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *PartMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *PartMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the Part entity.
+// If the Part object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PartMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *PartMutation) ResetDescription() {
+	m.description = nil
 }
 
 // AddTagIDs adds the "tags" edge to the Tag entity by ids.
@@ -905,12 +942,15 @@ func (m *PartMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PartMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 3)
 	if m.createdAt != nil {
 		fields = append(fields, part.FieldCreatedAt)
 	}
 	if m.name != nil {
 		fields = append(fields, part.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, part.FieldDescription)
 	}
 	return fields
 }
@@ -924,6 +964,8 @@ func (m *PartMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case part.FieldName:
 		return m.Name()
+	case part.FieldDescription:
+		return m.Description()
 	}
 	return nil, false
 }
@@ -937,6 +979,8 @@ func (m *PartMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldCreatedAt(ctx)
 	case part.FieldName:
 		return m.OldName(ctx)
+	case part.FieldDescription:
+		return m.OldDescription(ctx)
 	}
 	return nil, fmt.Errorf("unknown Part field %s", name)
 }
@@ -959,6 +1003,13 @@ func (m *PartMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case part.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Part field %s", name)
@@ -1014,6 +1065,9 @@ func (m *PartMutation) ResetField(name string) error {
 		return nil
 	case part.FieldName:
 		m.ResetName()
+		return nil
+	case part.FieldDescription:
+		m.ResetDescription()
 		return nil
 	}
 	return fmt.Errorf("unknown Part field %s", name)

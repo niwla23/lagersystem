@@ -43,6 +43,12 @@ func (pc *PartCreate) SetName(s string) *PartCreate {
 	return pc
 }
 
+// SetDescription sets the "description" field.
+func (pc *PartCreate) SetDescription(s string) *PartCreate {
+	pc.mutation.SetDescription(s)
+	return pc
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (pc *PartCreate) AddTagIDs(ids ...int) *PartCreate {
 	pc.mutation.AddTagIDs(ids...)
@@ -142,6 +148,9 @@ func (pc *PartCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Part.name": %w`, err)}
 		}
 	}
+	if _, ok := pc.mutation.Description(); !ok {
+		return &ValidationError{Name: "description", err: errors.New(`ent: missing required field "Part.description"`)}
+	}
 	return nil
 }
 
@@ -181,6 +190,10 @@ func (pc *PartCreate) createSpec() (*Part, *sqlgraph.CreateSpec) {
 	if value, ok := pc.mutation.Name(); ok {
 		_spec.SetField(part.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if value, ok := pc.mutation.Description(); ok {
+		_spec.SetField(part.FieldDescription, field.TypeString, value)
+		_node.Description = value
 	}
 	if nodes := pc.mutation.TagsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

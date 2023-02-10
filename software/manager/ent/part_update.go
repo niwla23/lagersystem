@@ -51,6 +51,12 @@ func (pu *PartUpdate) SetName(s string) *PartUpdate {
 	return pu
 }
 
+// SetDescription sets the "description" field.
+func (pu *PartUpdate) SetDescription(s string) *PartUpdate {
+	pu.mutation.SetDescription(s)
+	return pu
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (pu *PartUpdate) AddTagIDs(ids ...int) *PartUpdate {
 	pu.mutation.AddTagIDs(ids...)
@@ -227,6 +233,9 @@ func (pu *PartUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := pu.mutation.Name(); ok {
 		_spec.SetField(part.FieldName, field.TypeString, value)
+	}
+	if value, ok := pu.mutation.Description(); ok {
+		_spec.SetField(part.FieldDescription, field.TypeString, value)
 	}
 	if pu.mutation.TagsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -430,6 +439,12 @@ func (puo *PartUpdateOne) SetName(s string) *PartUpdateOne {
 	return puo
 }
 
+// SetDescription sets the "description" field.
+func (puo *PartUpdateOne) SetDescription(s string) *PartUpdateOne {
+	puo.mutation.SetDescription(s)
+	return puo
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (puo *PartUpdateOne) AddTagIDs(ids ...int) *PartUpdateOne {
 	puo.mutation.AddTagIDs(ids...)
@@ -630,6 +645,9 @@ func (puo *PartUpdateOne) sqlSave(ctx context.Context) (_node *Part, err error) 
 	}
 	if value, ok := puo.mutation.Name(); ok {
 		_spec.SetField(part.FieldName, field.TypeString, value)
+	}
+	if value, ok := puo.mutation.Description(); ok {
+		_spec.SetField(part.FieldDescription, field.TypeString, value)
 	}
 	if puo.mutation.TagsCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -18,6 +18,7 @@ func (Part) Fields() []ent.Field {
 	return []ent.Field{
 		field.Time("createdAt").Default(time.Now),
 		field.String("name").NotEmpty().Unique(),
+		field.String("description"),
 	}
 }
 

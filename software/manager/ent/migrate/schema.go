@@ -24,6 +24,7 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "description", Type: field.TypeString},
 	}
 	// PartsTable holds the schema information for the "parts" table.
 	PartsTable = &schema.Table{
