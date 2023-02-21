@@ -482,7 +482,8 @@ func (c *PartClient) QuerySections(pa *Part) *SectionQuery {
 
 // Hooks returns the client hooks.
 func (c *PartClient) Hooks() []Hook {
-	return c.hooks.Part
+	hooks := c.hooks.Part
+	return append(hooks[:len(hooks):len(hooks)], part.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.

@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "software/operator"
+		},
+		{
+			"path": "software/manager"
+		}
+	],
+	"settings": {}
+}
