@@ -12,12 +12,21 @@ var (
 	BoxesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
+		{Name: "system_boxes", Type: field.TypeInt, Nullable: true},
 	}
 	// BoxesTable holds the schema information for the "boxes" table.
 	BoxesTable = &schema.Table{
 		Name:       "boxes",
 		Columns:    BoxesColumns,
 		PrimaryKey: []*schema.Column{BoxesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "boxes_systems_boxes",
+				Columns:    []*schema.Column{BoxesColumns[2]},
+				RefColumns: []*schema.Column{SystemsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// PartsColumns holds the columns for the "parts" table.
 	PartsColumns = []*schema.Column{
@@ -95,6 +104,20 @@ var (
 				OnDelete:   schema.SetNull,
 			},
 		},
+	}
+	// SystemsColumns holds the columns for the "systems" table.
+	SystemsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "modified_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "description", Type: field.TypeString},
+	}
+	// SystemsTable holds the schema information for the "systems" table.
+	SystemsTable = &schema.Table{
+		Name:       "systems",
+		Columns:    SystemsColumns,
+		PrimaryKey: []*schema.Column{SystemsColumns[0]},
 	}
 	// TagsColumns holds the columns for the "tags" table.
 	TagsColumns = []*schema.Column{
@@ -175,6 +198,7 @@ var (
 		PositionsTable,
 		PropertiesTable,
 		SectionsTable,
+		SystemsTable,
 		TagsTable,
 		PartTagsTable,
 		PartSectionsTable,
@@ -182,6 +206,7 @@ var (
 )
 
 func init() {
+	BoxesTable.ForeignKeys[0].RefTable = SystemsTable
 	PositionsTable.ForeignKeys[0].RefTable = BoxesTable
 	PropertiesTable.ForeignKeys[0].RefTable = PartsTable
 	SectionsTable.ForeignKeys[0].RefTable = BoxesTable

@@ -13,6 +13,7 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/box"
 	"github.com/niwla23/lagersystem/manager/ent/position"
 	"github.com/niwla23/lagersystem/manager/ent/section"
+	"github.com/niwla23/lagersystem/manager/ent/system"
 )
 
 // BoxCreate is the builder for creating a Box entity.
@@ -68,6 +69,25 @@ func (bc *BoxCreate) SetNillablePositionID(id *int) *BoxCreate {
 // SetPosition sets the "position" edge to the Position entity.
 func (bc *BoxCreate) SetPosition(p *Position) *BoxCreate {
 	return bc.SetPositionID(p.ID)
+}
+
+// SetSystemID sets the "system" edge to the System entity by ID.
+func (bc *BoxCreate) SetSystemID(id int) *BoxCreate {
+	bc.mutation.SetSystemID(id)
+	return bc
+}
+
+// SetNillableSystemID sets the "system" edge to the System entity by ID if the given value is not nil.
+func (bc *BoxCreate) SetNillableSystemID(id *int) *BoxCreate {
+	if id != nil {
+		bc = bc.SetSystemID(*id)
+	}
+	return bc
+}
+
+// SetSystem sets the "system" edge to the System entity.
+func (bc *BoxCreate) SetSystem(s *System) *BoxCreate {
+	return bc.SetSystemID(s.ID)
 }
 
 // Mutation returns the BoxMutation object of the builder.
@@ -188,6 +208,26 @@ func (bc *BoxCreate) createSpec() (*Box, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := bc.mutation.SystemIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   box.SystemTable,
+			Columns: []string{box.SystemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: system.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.system_boxes = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

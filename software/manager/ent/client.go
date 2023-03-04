@@ -15,6 +15,7 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/position"
 	"github.com/niwla23/lagersystem/manager/ent/property"
 	"github.com/niwla23/lagersystem/manager/ent/section"
+	"github.com/niwla23/lagersystem/manager/ent/system"
 	"github.com/niwla23/lagersystem/manager/ent/tag"
 
 	"entgo.io/ent/dialect"
@@ -37,6 +38,8 @@ type Client struct {
 	Property *PropertyClient
 	// Section is the client for interacting with the Section builders.
 	Section *SectionClient
+	// System is the client for interacting with the System builders.
+	System *SystemClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
 }
@@ -57,6 +60,7 @@ func (c *Client) init() {
 	c.Position = NewPositionClient(c.config)
 	c.Property = NewPropertyClient(c.config)
 	c.Section = NewSectionClient(c.config)
+	c.System = NewSystemClient(c.config)
 	c.Tag = NewTagClient(c.config)
 }
 
@@ -96,6 +100,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Position: NewPositionClient(cfg),
 		Property: NewPropertyClient(cfg),
 		Section:  NewSectionClient(cfg),
+		System:   NewSystemClient(cfg),
 		Tag:      NewTagClient(cfg),
 	}, nil
 }
@@ -121,6 +126,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Position: NewPositionClient(cfg),
 		Property: NewPropertyClient(cfg),
 		Section:  NewSectionClient(cfg),
+		System:   NewSystemClient(cfg),
 		Tag:      NewTagClient(cfg),
 	}, nil
 }
@@ -155,6 +161,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Position.Use(hooks...)
 	c.Property.Use(hooks...)
 	c.Section.Use(hooks...)
+	c.System.Use(hooks...)
 	c.Tag.Use(hooks...)
 }
 
@@ -166,6 +173,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Position.Intercept(interceptors...)
 	c.Property.Intercept(interceptors...)
 	c.Section.Intercept(interceptors...)
+	c.System.Intercept(interceptors...)
 	c.Tag.Intercept(interceptors...)
 }
 
@@ -182,6 +190,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Property.mutate(ctx, m)
 	case *SectionMutation:
 		return c.Section.mutate(ctx, m)
+	case *SystemMutation:
+		return c.System.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
 	default:
@@ -307,6 +317,22 @@ func (c *BoxClient) QueryPosition(b *Box) *PositionQuery {
 			sqlgraph.From(box.Table, box.FieldID, id),
 			sqlgraph.To(position.Table, position.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, box.PositionTable, box.PositionColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySystem queries the system edge of a Box.
+func (c *BoxClient) QuerySystem(b *Box) *SystemQuery {
+	query := (&SystemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(box.Table, box.FieldID, id),
+			sqlgraph.To(system.Table, system.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, box.SystemTable, box.SystemColumn),
 		)
 		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
 		return fromV, nil
@@ -482,8 +508,7 @@ func (c *PartClient) QuerySections(pa *Part) *SectionQuery {
 
 // Hooks returns the client hooks.
 func (c *PartClient) Hooks() []Hook {
-	hooks := c.hooks.Part
-	return append(hooks[:len(hooks):len(hooks)], part.Hooks[:]...)
+	return c.hooks.Part
 }
 
 // Interceptors returns the client interceptors.
@@ -921,6 +946,140 @@ func (c *SectionClient) mutate(ctx context.Context, m *SectionMutation) (Value, 
 		return (&SectionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Section mutation op: %q", m.Op())
+	}
+}
+
+// SystemClient is a client for the System schema.
+type SystemClient struct {
+	config
+}
+
+// NewSystemClient returns a client for the System from the given config.
+func NewSystemClient(c config) *SystemClient {
+	return &SystemClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `system.Hooks(f(g(h())))`.
+func (c *SystemClient) Use(hooks ...Hook) {
+	c.hooks.System = append(c.hooks.System, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `system.Intercept(f(g(h())))`.
+func (c *SystemClient) Intercept(interceptors ...Interceptor) {
+	c.inters.System = append(c.inters.System, interceptors...)
+}
+
+// Create returns a builder for creating a System entity.
+func (c *SystemClient) Create() *SystemCreate {
+	mutation := newSystemMutation(c.config, OpCreate)
+	return &SystemCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of System entities.
+func (c *SystemClient) CreateBulk(builders ...*SystemCreate) *SystemCreateBulk {
+	return &SystemCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for System.
+func (c *SystemClient) Update() *SystemUpdate {
+	mutation := newSystemMutation(c.config, OpUpdate)
+	return &SystemUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SystemClient) UpdateOne(s *System) *SystemUpdateOne {
+	mutation := newSystemMutation(c.config, OpUpdateOne, withSystem(s))
+	return &SystemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SystemClient) UpdateOneID(id int) *SystemUpdateOne {
+	mutation := newSystemMutation(c.config, OpUpdateOne, withSystemID(id))
+	return &SystemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for System.
+func (c *SystemClient) Delete() *SystemDelete {
+	mutation := newSystemMutation(c.config, OpDelete)
+	return &SystemDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SystemClient) DeleteOne(s *System) *SystemDeleteOne {
+	return c.DeleteOneID(s.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SystemClient) DeleteOneID(id int) *SystemDeleteOne {
+	builder := c.Delete().Where(system.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SystemDeleteOne{builder}
+}
+
+// Query returns a query builder for System.
+func (c *SystemClient) Query() *SystemQuery {
+	return &SystemQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSystem},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a System entity by its id.
+func (c *SystemClient) Get(ctx context.Context, id int) (*System, error) {
+	return c.Query().Where(system.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SystemClient) GetX(ctx context.Context, id int) *System {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryBoxes queries the boxes edge of a System.
+func (c *SystemClient) QueryBoxes(s *System) *BoxQuery {
+	query := (&BoxClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(system.Table, system.FieldID, id),
+			sqlgraph.To(box.Table, box.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, system.BoxesTable, system.BoxesColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SystemClient) Hooks() []Hook {
+	return c.hooks.System
+}
+
+// Interceptors returns the client interceptors.
+func (c *SystemClient) Interceptors() []Interceptor {
+	return c.inters.System
+}
+
+func (c *SystemClient) mutate(ctx context.Context, m *SystemMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SystemCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SystemUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SystemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SystemDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown System mutation op: %q", m.Op())
 	}
 }
 

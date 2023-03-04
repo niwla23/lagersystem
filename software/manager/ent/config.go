@@ -32,6 +32,7 @@ type (
 		Position []ent.Hook
 		Property []ent.Hook
 		Section  []ent.Hook
+		System   []ent.Hook
 		Tag      []ent.Hook
 	}
 	inters struct {
@@ -40,6 +41,7 @@ type (
 		Position []ent.Interceptor
 		Property []ent.Interceptor
 		Section  []ent.Interceptor
+		System   []ent.Interceptor
 		Tag      []ent.Interceptor
 	}
 )

@@ -16,6 +16,7 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/position"
 	"github.com/niwla23/lagersystem/manager/ent/property"
 	"github.com/niwla23/lagersystem/manager/ent/section"
+	"github.com/niwla23/lagersystem/manager/ent/system"
 	"github.com/niwla23/lagersystem/manager/ent/tag"
 )
 
@@ -49,6 +50,7 @@ func columnChecker(table string) func(string) error {
 		position.Table: position.ValidColumn,
 		property.Table: property.ValidColumn,
 		section.Table:  section.ValidColumn,
+		system.Table:   system.ValidColumn,
 		tag.Table:      tag.ValidColumn,
 	}
 	check, ok := checks[table]

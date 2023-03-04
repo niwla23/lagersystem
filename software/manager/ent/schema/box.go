@@ -24,7 +24,7 @@ func (Box) Fields() []ent.Field {
 func (Box) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("sections", Section.Type),
-		edge.To("position", Position.Type).
-			Unique(),
+		edge.To("position", Position.Type).Unique(),
+		edge.From("system", System.Type).Ref("boxes").Unique(),
 	}
 }

@@ -101,9 +101,7 @@ func (pc *PartCreate) Mutation() *PartMutation {
 
 // Save creates the Part in the database.
 func (pc *PartCreate) Save(ctx context.Context) (*Part, error) {
-	if err := pc.defaults(); err != nil {
-		return nil, err
-	}
+	pc.defaults()
 	return withHooks[*Part, PartMutation](ctx, pc.sqlSave, pc.mutation, pc.hooks)
 }
 
@@ -130,15 +128,11 @@ func (pc *PartCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (pc *PartCreate) defaults() error {
+func (pc *PartCreate) defaults() {
 	if _, ok := pc.mutation.CreatedAt(); !ok {
-		if part.DefaultCreatedAt == nil {
-			return fmt.Errorf("ent: uninitialized part.DefaultCreatedAt (forgotten import ent/runtime?)")
-		}
 		v := part.DefaultCreatedAt()
 		pc.mutation.SetCreatedAt(v)
 	}
-	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.

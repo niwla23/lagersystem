@@ -154,6 +154,33 @@ func HasPositionWith(preds ...predicate.Position) predicate.Box {
 	})
 }
 
+// HasSystem applies the HasEdge predicate on the "system" edge.
+func HasSystem() predicate.Box {
+	return predicate.Box(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, SystemTable, SystemColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSystemWith applies the HasEdge predicate on the "system" edge with a given conditions (other predicates).
+func HasSystemWith(preds ...predicate.System) predicate.Box {
+	return predicate.Box(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(SystemInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, SystemTable, SystemColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Box) predicate.Box {
 	return predicate.Box(func(s *sql.Selector) {

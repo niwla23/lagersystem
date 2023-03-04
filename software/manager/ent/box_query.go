@@ -15,6 +15,7 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/position"
 	"github.com/niwla23/lagersystem/manager/ent/predicate"
 	"github.com/niwla23/lagersystem/manager/ent/section"
+	"github.com/niwla23/lagersystem/manager/ent/system"
 )
 
 // BoxQuery is the builder for querying Box entities.
@@ -26,6 +27,8 @@ type BoxQuery struct {
 	predicates   []predicate.Box
 	withSections *SectionQuery
 	withPosition *PositionQuery
+	withSystem   *SystemQuery
+	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -99,6 +102,28 @@ func (bq *BoxQuery) QueryPosition() *PositionQuery {
 			sqlgraph.From(box.Table, box.FieldID, selector),
 			sqlgraph.To(position.Table, position.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, box.PositionTable, box.PositionColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySystem chains the current query on the "system" edge.
+func (bq *BoxQuery) QuerySystem() *SystemQuery {
+	query := (&SystemClient{config: bq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := bq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := bq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(box.Table, box.FieldID, selector),
+			sqlgraph.To(system.Table, system.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, box.SystemTable, box.SystemColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
 		return fromU, nil
@@ -298,6 +323,7 @@ func (bq *BoxQuery) Clone() *BoxQuery {
 		predicates:   append([]predicate.Box{}, bq.predicates...),
 		withSections: bq.withSections.Clone(),
 		withPosition: bq.withPosition.Clone(),
+		withSystem:   bq.withSystem.Clone(),
 		// clone intermediate query.
 		sql:  bq.sql.Clone(),
 		path: bq.path,
@@ -323,6 +349,17 @@ func (bq *BoxQuery) WithPosition(opts ...func(*PositionQuery)) *BoxQuery {
 		opt(query)
 	}
 	bq.withPosition = query
+	return bq
+}
+
+// WithSystem tells the query-builder to eager-load the nodes that are connected to
+// the "system" edge. The optional arguments are used to configure the query builder of the edge.
+func (bq *BoxQuery) WithSystem(opts ...func(*SystemQuery)) *BoxQuery {
+	query := (&SystemClient{config: bq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	bq.withSystem = query
 	return bq
 }
 
@@ -403,12 +440,20 @@ func (bq *BoxQuery) prepareQuery(ctx context.Context) error {
 func (bq *BoxQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Box, error) {
 	var (
 		nodes       = []*Box{}
+		withFKs     = bq.withFKs
 		_spec       = bq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			bq.withSections != nil,
 			bq.withPosition != nil,
+			bq.withSystem != nil,
 		}
 	)
+	if bq.withSystem != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, box.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Box).scanValues(nil, columns)
 	}
@@ -437,6 +482,12 @@ func (bq *BoxQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Box, err
 	if query := bq.withPosition; query != nil {
 		if err := bq.loadPosition(ctx, query, nodes, nil,
 			func(n *Box, e *Position) { n.Edges.Position = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := bq.withSystem; query != nil {
+		if err := bq.loadSystem(ctx, query, nodes, nil,
+			func(n *Box, e *System) { n.Edges.System = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -499,6 +550,38 @@ func (bq *BoxQuery) loadPosition(ctx context.Context, query *PositionQuery, node
 			return fmt.Errorf(`unexpected foreign-key "box_position" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (bq *BoxQuery) loadSystem(ctx context.Context, query *SystemQuery, nodes []*Box, init func(*Box), assign func(*Box, *System)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Box)
+	for i := range nodes {
+		if nodes[i].system_boxes == nil {
+			continue
+		}
+		fk := *nodes[i].system_boxes
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(system.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "system_boxes" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }

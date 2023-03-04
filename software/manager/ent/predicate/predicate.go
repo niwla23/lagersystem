@@ -21,5 +21,8 @@ type Property func(*sql.Selector)
 // Section is the predicate function for section builders.
 type Section func(*sql.Selector)
 
+// System is the predicate function for system builders.
+type System func(*sql.Selector)
+
 // Tag is the predicate function for tag builders.
 type Tag func(*sql.Selector)

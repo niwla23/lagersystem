@@ -15,6 +15,7 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/predicate"
 	"github.com/niwla23/lagersystem/manager/ent/property"
 	"github.com/niwla23/lagersystem/manager/ent/section"
+	"github.com/niwla23/lagersystem/manager/ent/system"
 	"github.com/niwla23/lagersystem/manager/ent/tag"
 
 	"entgo.io/ent"
@@ -35,6 +36,7 @@ const (
 	TypePosition = "Position"
 	TypeProperty = "Property"
 	TypeSection  = "Section"
+	TypeSystem   = "System"
 	TypeTag      = "Tag"
 )
 
@@ -51,6 +53,8 @@ type BoxMutation struct {
 	clearedsections bool
 	position        *int
 	clearedposition bool
+	system          *int
+	clearedsystem   bool
 	done            bool
 	oldValue        func(context.Context) (*Box, error)
 	predicates      []predicate.Box
@@ -283,6 +287,45 @@ func (m *BoxMutation) ResetPosition() {
 	m.clearedposition = false
 }
 
+// SetSystemID sets the "system" edge to the System entity by id.
+func (m *BoxMutation) SetSystemID(id int) {
+	m.system = &id
+}
+
+// ClearSystem clears the "system" edge to the System entity.
+func (m *BoxMutation) ClearSystem() {
+	m.clearedsystem = true
+}
+
+// SystemCleared reports if the "system" edge to the System entity was cleared.
+func (m *BoxMutation) SystemCleared() bool {
+	return m.clearedsystem
+}
+
+// SystemID returns the "system" edge ID in the mutation.
+func (m *BoxMutation) SystemID() (id int, exists bool) {
+	if m.system != nil {
+		return *m.system, true
+	}
+	return
+}
+
+// SystemIDs returns the "system" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SystemID instead. It exists only for internal usage by the builders.
+func (m *BoxMutation) SystemIDs() (ids []int) {
+	if id := m.system; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSystem resets all changes to the "system" edge.
+func (m *BoxMutation) ResetSystem() {
+	m.system = nil
+	m.clearedsystem = false
+}
+
 // Where appends a list predicates to the BoxMutation builder.
 func (m *BoxMutation) Where(ps ...predicate.Box) {
 	m.predicates = append(m.predicates, ps...)
@@ -416,12 +459,15 @@ func (m *BoxMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BoxMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.sections != nil {
 		edges = append(edges, box.EdgeSections)
 	}
 	if m.position != nil {
 		edges = append(edges, box.EdgePosition)
+	}
+	if m.system != nil {
+		edges = append(edges, box.EdgeSystem)
 	}
 	return edges
 }
@@ -440,13 +486,17 @@ func (m *BoxMutation) AddedIDs(name string) []ent.Value {
 		if id := m.position; id != nil {
 			return []ent.Value{*id}
 		}
+	case box.EdgeSystem:
+		if id := m.system; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BoxMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedsections != nil {
 		edges = append(edges, box.EdgeSections)
 	}
@@ -469,12 +519,15 @@ func (m *BoxMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BoxMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedsections {
 		edges = append(edges, box.EdgeSections)
 	}
 	if m.clearedposition {
 		edges = append(edges, box.EdgePosition)
+	}
+	if m.clearedsystem {
+		edges = append(edges, box.EdgeSystem)
 	}
 	return edges
 }
@@ -487,6 +540,8 @@ func (m *BoxMutation) EdgeCleared(name string) bool {
 		return m.clearedsections
 	case box.EdgePosition:
 		return m.clearedposition
+	case box.EdgeSystem:
+		return m.clearedsystem
 	}
 	return false
 }
@@ -497,6 +552,9 @@ func (m *BoxMutation) ClearEdge(name string) error {
 	switch name {
 	case box.EdgePosition:
 		m.ClearPosition()
+		return nil
+	case box.EdgeSystem:
+		m.ClearSystem()
 		return nil
 	}
 	return fmt.Errorf("unknown Box unique edge %s", name)
@@ -511,6 +569,9 @@ func (m *BoxMutation) ResetEdge(name string) error {
 		return nil
 	case box.EdgePosition:
 		m.ResetPosition()
+		return nil
+	case box.EdgeSystem:
+		m.ResetSystem()
 		return nil
 	}
 	return fmt.Errorf("unknown Box edge %s", name)
@@ -2723,6 +2784,587 @@ func (m *SectionMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Section edge %s", name)
+}
+
+// SystemMutation represents an operation that mutates the System nodes in the graph.
+type SystemMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	createdAt     *time.Time
+	modifiedAt    *time.Time
+	name          *string
+	description   *string
+	clearedFields map[string]struct{}
+	boxes         map[int]struct{}
+	removedboxes  map[int]struct{}
+	clearedboxes  bool
+	done          bool
+	oldValue      func(context.Context) (*System, error)
+	predicates    []predicate.System
+}
+
+var _ ent.Mutation = (*SystemMutation)(nil)
+
+// systemOption allows management of the mutation configuration using functional options.
+type systemOption func(*SystemMutation)
+
+// newSystemMutation creates new mutation for the System entity.
+func newSystemMutation(c config, op Op, opts ...systemOption) *SystemMutation {
+	m := &SystemMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSystem,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSystemID sets the ID field of the mutation.
+func withSystemID(id int) systemOption {
+	return func(m *SystemMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *System
+		)
+		m.oldValue = func(ctx context.Context) (*System, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().System.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSystem sets the old System of the mutation.
+func withSystem(node *System) systemOption {
+	return func(m *SystemMutation) {
+		m.oldValue = func(context.Context) (*System, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SystemMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SystemMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SystemMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SystemMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().System.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "createdAt" field.
+func (m *SystemMutation) SetCreatedAt(t time.Time) {
+	m.createdAt = &t
+}
+
+// CreatedAt returns the value of the "createdAt" field in the mutation.
+func (m *SystemMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.createdAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "createdAt" field's value of the System entity.
+// If the System object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SystemMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "createdAt" field.
+func (m *SystemMutation) ResetCreatedAt() {
+	m.createdAt = nil
+}
+
+// SetModifiedAt sets the "modifiedAt" field.
+func (m *SystemMutation) SetModifiedAt(t time.Time) {
+	m.modifiedAt = &t
+}
+
+// ModifiedAt returns the value of the "modifiedAt" field in the mutation.
+func (m *SystemMutation) ModifiedAt() (r time.Time, exists bool) {
+	v := m.modifiedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldModifiedAt returns the old "modifiedAt" field's value of the System entity.
+// If the System object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SystemMutation) OldModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldModifiedAt: %w", err)
+	}
+	return oldValue.ModifiedAt, nil
+}
+
+// ResetModifiedAt resets all changes to the "modifiedAt" field.
+func (m *SystemMutation) ResetModifiedAt() {
+	m.modifiedAt = nil
+}
+
+// SetName sets the "name" field.
+func (m *SystemMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *SystemMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the System entity.
+// If the System object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SystemMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *SystemMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *SystemMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *SystemMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the System entity.
+// If the System object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SystemMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *SystemMutation) ResetDescription() {
+	m.description = nil
+}
+
+// AddBoxIDs adds the "boxes" edge to the Box entity by ids.
+func (m *SystemMutation) AddBoxIDs(ids ...int) {
+	if m.boxes == nil {
+		m.boxes = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.boxes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearBoxes clears the "boxes" edge to the Box entity.
+func (m *SystemMutation) ClearBoxes() {
+	m.clearedboxes = true
+}
+
+// BoxesCleared reports if the "boxes" edge to the Box entity was cleared.
+func (m *SystemMutation) BoxesCleared() bool {
+	return m.clearedboxes
+}
+
+// RemoveBoxIDs removes the "boxes" edge to the Box entity by IDs.
+func (m *SystemMutation) RemoveBoxIDs(ids ...int) {
+	if m.removedboxes == nil {
+		m.removedboxes = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.boxes, ids[i])
+		m.removedboxes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedBoxes returns the removed IDs of the "boxes" edge to the Box entity.
+func (m *SystemMutation) RemovedBoxesIDs() (ids []int) {
+	for id := range m.removedboxes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// BoxesIDs returns the "boxes" edge IDs in the mutation.
+func (m *SystemMutation) BoxesIDs() (ids []int) {
+	for id := range m.boxes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetBoxes resets all changes to the "boxes" edge.
+func (m *SystemMutation) ResetBoxes() {
+	m.boxes = nil
+	m.clearedboxes = false
+	m.removedboxes = nil
+}
+
+// Where appends a list predicates to the SystemMutation builder.
+func (m *SystemMutation) Where(ps ...predicate.System) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SystemMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SystemMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.System, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SystemMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SystemMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (System).
+func (m *SystemMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SystemMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.createdAt != nil {
+		fields = append(fields, system.FieldCreatedAt)
+	}
+	if m.modifiedAt != nil {
+		fields = append(fields, system.FieldModifiedAt)
+	}
+	if m.name != nil {
+		fields = append(fields, system.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, system.FieldDescription)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SystemMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case system.FieldCreatedAt:
+		return m.CreatedAt()
+	case system.FieldModifiedAt:
+		return m.ModifiedAt()
+	case system.FieldName:
+		return m.Name()
+	case system.FieldDescription:
+		return m.Description()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SystemMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case system.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case system.FieldModifiedAt:
+		return m.OldModifiedAt(ctx)
+	case system.FieldName:
+		return m.OldName(ctx)
+	case system.FieldDescription:
+		return m.OldDescription(ctx)
+	}
+	return nil, fmt.Errorf("unknown System field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SystemMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case system.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case system.FieldModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetModifiedAt(v)
+		return nil
+	case system.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case system.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	}
+	return fmt.Errorf("unknown System field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SystemMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SystemMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SystemMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown System numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SystemMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SystemMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SystemMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown System nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SystemMutation) ResetField(name string) error {
+	switch name {
+	case system.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case system.FieldModifiedAt:
+		m.ResetModifiedAt()
+		return nil
+	case system.FieldName:
+		m.ResetName()
+		return nil
+	case system.FieldDescription:
+		m.ResetDescription()
+		return nil
+	}
+	return fmt.Errorf("unknown System field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SystemMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.boxes != nil {
+		edges = append(edges, system.EdgeBoxes)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SystemMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case system.EdgeBoxes:
+		ids := make([]ent.Value, 0, len(m.boxes))
+		for id := range m.boxes {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SystemMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedboxes != nil {
+		edges = append(edges, system.EdgeBoxes)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SystemMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case system.EdgeBoxes:
+		ids := make([]ent.Value, 0, len(m.removedboxes))
+		for id := range m.removedboxes {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SystemMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedboxes {
+		edges = append(edges, system.EdgeBoxes)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SystemMutation) EdgeCleared(name string) bool {
+	switch name {
+	case system.EdgeBoxes:
+		return m.clearedboxes
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SystemMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown System unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SystemMutation) ResetEdge(name string) error {
+	switch name {
+	case system.EdgeBoxes:
+		m.ResetBoxes()
+		return nil
+	}
+	return fmt.Errorf("unknown System edge %s", name)
 }
 
 // TagMutation represents an operation that mutates the Tag nodes in the graph.

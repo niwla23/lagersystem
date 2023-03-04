@@ -17,6 +17,8 @@ const (
 	EdgeSections = "sections"
 	// EdgePosition holds the string denoting the position edge name in mutations.
 	EdgePosition = "position"
+	// EdgeSystem holds the string denoting the system edge name in mutations.
+	EdgeSystem = "system"
 	// Table holds the table name of the box in the database.
 	Table = "boxes"
 	// SectionsTable is the table that holds the sections relation/edge.
@@ -33,6 +35,13 @@ const (
 	PositionInverseTable = "positions"
 	// PositionColumn is the table column denoting the position relation/edge.
 	PositionColumn = "box_position"
+	// SystemTable is the table that holds the system relation/edge.
+	SystemTable = "boxes"
+	// SystemInverseTable is the table name for the System entity.
+	// It exists in this package in order to avoid circular dependency with the "system" package.
+	SystemInverseTable = "systems"
+	// SystemColumn is the table column denoting the system relation/edge.
+	SystemColumn = "system_boxes"
 )
 
 // Columns holds all SQL columns for box fields.
@@ -41,10 +50,21 @@ var Columns = []string{
 	FieldCreatedAt,
 }
 
+// ForeignKeys holds the SQL foreign-keys that are owned by the "boxes"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"system_boxes",
+}
+
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}

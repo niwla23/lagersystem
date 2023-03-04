@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/niwla23/lagersystem/manager/ent/box"
 	"github.com/niwla23/lagersystem/manager/ent/position"
+	"github.com/niwla23/lagersystem/manager/ent/system"
 )
 
 // Box is the model entity for the Box schema.
@@ -21,7 +22,8 @@ type Box struct {
 	CreatedAt time.Time `json:"createdAt,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BoxQuery when eager-loading is set.
-	Edges BoxEdges `json:"edges"`
+	Edges        BoxEdges `json:"edges"`
+	system_boxes *int
 }
 
 // BoxEdges holds the relations/edges for other nodes in the graph.
@@ -30,9 +32,11 @@ type BoxEdges struct {
 	Sections []*Section `json:"sections,omitempty"`
 	// Position holds the value of the position edge.
 	Position *Position `json:"position,omitempty"`
+	// System holds the value of the system edge.
+	System *System `json:"system,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // SectionsOrErr returns the Sections value or an error if the edge
@@ -57,6 +61,19 @@ func (e BoxEdges) PositionOrErr() (*Position, error) {
 	return nil, &NotLoadedError{edge: "position"}
 }
 
+// SystemOrErr returns the System value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BoxEdges) SystemOrErr() (*System, error) {
+	if e.loadedTypes[2] {
+		if e.System == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: system.Label}
+		}
+		return e.System, nil
+	}
+	return nil, &NotLoadedError{edge: "system"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Box) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -66,6 +83,8 @@ func (*Box) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case box.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
+		case box.ForeignKeys[0]: // system_boxes
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Box", columns[i])
 		}
@@ -93,6 +112,13 @@ func (b *Box) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				b.CreatedAt = value.Time
 			}
+		case box.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field system_boxes", value)
+			} else if value.Valid {
+				b.system_boxes = new(int)
+				*b.system_boxes = int(value.Int64)
+			}
 		}
 	}
 	return nil
@@ -106,6 +132,11 @@ func (b *Box) QuerySections() *SectionQuery {
 // QueryPosition queries the "position" edge of the Box entity.
 func (b *Box) QueryPosition() *PositionQuery {
 	return NewBoxClient(b.config).QueryPosition(b)
+}
+
+// QuerySystem queries the "system" edge of the Box entity.
+func (b *Box) QuerySystem() *SystemQuery {
+	return NewBoxClient(b.config).QuerySystem(b)
 }
 
 // Update returns a builder for updating this Box.
