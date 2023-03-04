@@ -35,6 +35,20 @@ func (tc *TagCreate) SetNillableCreatedAt(t *time.Time) *TagCreate {
 	return tc
 }
 
+// SetUpdatedAt sets the "updatedAt" field.
+func (tc *TagCreate) SetUpdatedAt(t time.Time) *TagCreate {
+	tc.mutation.SetUpdatedAt(t)
+	return tc
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (tc *TagCreate) SetNillableUpdatedAt(t *time.Time) *TagCreate {
+	if t != nil {
+		tc.SetUpdatedAt(*t)
+	}
+	return tc
+}
+
 // SetName sets the "name" field.
 func (tc *TagCreate) SetName(s string) *TagCreate {
 	tc.mutation.SetName(s)
@@ -103,7 +117,9 @@ func (tc *TagCreate) Mutation() *TagMutation {
 
 // Save creates the Tag in the database.
 func (tc *TagCreate) Save(ctx context.Context) (*Tag, error) {
-	tc.defaults()
+	if err := tc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks[*Tag, TagMutation](ctx, tc.sqlSave, tc.mutation, tc.hooks)
 }
 
@@ -130,17 +146,31 @@ func (tc *TagCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (tc *TagCreate) defaults() {
+func (tc *TagCreate) defaults() error {
 	if _, ok := tc.mutation.CreatedAt(); !ok {
+		if tag.DefaultCreatedAt == nil {
+			return fmt.Errorf("ent: uninitialized tag.DefaultCreatedAt (forgotten import ent/runtime?)")
+		}
 		v := tag.DefaultCreatedAt()
 		tc.mutation.SetCreatedAt(v)
 	}
+	if _, ok := tc.mutation.UpdatedAt(); !ok {
+		if tag.DefaultUpdatedAt == nil {
+			return fmt.Errorf("ent: uninitialized tag.DefaultUpdatedAt (forgotten import ent/runtime?)")
+		}
+		v := tag.DefaultUpdatedAt()
+		tc.mutation.SetUpdatedAt(v)
+	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (tc *TagCreate) check() error {
 	if _, ok := tc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Tag.createdAt"`)}
+	}
+	if _, ok := tc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updatedAt", err: errors.New(`ent: missing required field "Tag.updatedAt"`)}
 	}
 	if _, ok := tc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Tag.name"`)}
@@ -188,6 +218,10 @@ func (tc *TagCreate) createSpec() (*Tag, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.CreatedAt(); ok {
 		_spec.SetField(tag.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
+	}
+	if value, ok := tc.mutation.UpdatedAt(); ok {
+		_spec.SetField(tag.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
 	}
 	if value, ok := tc.mutation.Name(); ok {
 		_spec.SetField(tag.FieldName, field.TypeString, value)

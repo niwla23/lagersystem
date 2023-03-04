@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/monitor"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 	_ "github.com/mattn/go-sqlite3"
 	_ "github.com/niwla23/lagersystem/manager/ent/runtime"
 	"github.com/niwla23/lagersystem/manager/typesense_wrapper"
@@ -16,20 +18,18 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent"
 )
 
-type PartAddData struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Tags        []string `json:"tags"`
-	BoxId       int      `json:"boxId"`
-}
-
 // use this function to return a json status message.
 // to use it just return its error
-func JsonStatusResponse(c *fiber.Ctx, code int, message string) *fiber.Error {
+// DEPRECATED: just yeet the error directly, gofiber will take care of it
+func JsonStatusResponse(c *fiber.Ctx, code int, message string) error {
 	schema := struct {
-		Message string `json:"message"`
+		Message   string    `json:"message"`
+		Code      int       `json:"code"`
+		Timestamp time.Time `json:"timestamp"`
 	}{}
 	schema.Message = message
+	schema.Code = code
+	schema.Timestamp = time.Now().UTC()
 
 	data, err := json.Marshal(schema)
 
@@ -38,7 +38,8 @@ func JsonStatusResponse(c *fiber.Ctx, code int, message string) *fiber.Error {
 	}
 
 	c.Response().Header.Add("content-type", "application/json")
-	return fiber.NewError(code, string(data))
+	return c.Status(code).SendString(string(data))
+	// return fiber.NewError(code, string(data))
 }
 
 func main() {
@@ -84,55 +85,51 @@ func main() {
 			if err != nil {
 				panic(fmt.Sprintf("failed creating typesense collection: %v", err))
 			}
+		} else {
+			panic(fmt.Sprintf("failed getting typesense collection: %v", err))
 		}
 	}
 
-	app := fiber.New(fiber.Config{AppName: "Storagesystem Manager Service"})
-	app.Get("/metrics", monitor.New(monitor.Config{Title: "Storagesystem Metrics Page"}))
+	app := fiber.New(fiber.Config{
+		AppName: "Storagesystem Manager Service",
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			fmt.Println(err.Error())
 
-	app.Post("/part", func(c *fiber.Ctx) error {
-		data := new(PartAddData)
+			// Status code defaults to 500
+			code := fiber.StatusInternalServerError
 
-		if err := c.BodyParser(data); err != nil {
-			return c.Status(500).SendString(err.Error())
-		}
+			// 404 if its a entgo not found error
+			if _, ok := err.(*ent.NotFoundError); ok {
+				code = fiber.StatusNotFound
+			}
 
-		part, err := client.Part.Create().SetName(data.Name).SetDescription(data.Description).Save(ctx)
+			// 406 if its a entgo constraint error
+			if _, ok := err.(*ent.ConstraintError); ok {
+				code = fiber.StatusNotAcceptable
+			}
 
-		if err != nil {
-			return c.Status(500).SendString(err.Error())
-		}
+			// 406 if its a entgo validation error
+			if _, ok := err.(*ent.ValidationError); ok {
+				code = fiber.StatusNotAcceptable
+			}
 
-		return c.SendString(part.Name)
+			// Retrieve the custom status code if it's a *fiber.Error
+			var e *fiber.Error
+			if errors.As(err, &e) {
+				code = e.Code
+			}
+
+			return JsonStatusResponse(c, code, err.Error())
+		},
 	})
 
-	// app.Put("/part/:partId<int>", func(c *fiber.Ctx) error {
-	// 	partId, _ := strconv.Atoi(c.Params("partId"))
-	// 	data := new(PartAddData)
+	app.Use(recover.New(recover.Config{EnableStackTrace: true}))
 
-	// 	if err := c.BodyParser(data); err != nil {
-	// 		return c.Status(500).SendString(err.Error())
-	// 	}
+	partHandlers := app.Group("/parts")
+	registerPartRoutes(partHandlers, client, ctx)
 
-	// 	part, err := client.Part.Get(ctx, partId)
-
-	// 	if err != nil {
-	// 		return c.Status(404).SendString(err.Error())
-	// 	}
-
-	// 	part, err = part.Update().SetName(data.Name).SetDescription(data.Description).Save(ctx)
-
-	// 	if err != nil {
-	// 		return c.Status(500).SendString(err.Error())
-	// 	}
-
-	// 	responseData, err := json.Marshal(part)
-
-	// 	if err != nil {
-	// 		return JsonStatusResponse(c, fiber.StatusInternalServerError, err.Error())
-	// 	}
-	// 	return c.SendString(string(responseData))
-	// })
+	positionHandlers := app.Group("/positions")
+	registerPositionRoutes(positionHandlers, client, ctx)
 
 	app.Listen(":3001")
 }

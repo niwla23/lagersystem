@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/niwla23/lagersystem/manager/ent/part"
+	"github.com/niwla23/lagersystem/manager/ent/section"
 )
 
 // Part is the model entity for the Part schema.
@@ -18,13 +19,18 @@ type Part struct {
 	ID int `json:"id,omitempty"`
 	// CreatedAt holds the value of the "createdAt" field.
 	CreatedAt time.Time `json:"createdAt,omitempty"`
+	// UpdatedAt holds the value of the "updatedAt" field.
+	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	// Deleted holds the value of the "deleted" field.
+	Deleted bool `json:"deleted,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PartQuery when eager-loading is set.
-	Edges PartEdges `json:"edges"`
+	Edges        PartEdges `json:"edges"`
+	part_section *int
 }
 
 // PartEdges holds the relations/edges for other nodes in the graph.
@@ -33,8 +39,8 @@ type PartEdges struct {
 	Tags []*Tag `json:"tags,omitempty"`
 	// Properties holds the value of the properties edge.
 	Properties []*Property `json:"properties,omitempty"`
-	// Sections holds the value of the sections edge.
-	Sections []*Section `json:"sections,omitempty"`
+	// Section holds the value of the section edge.
+	Section *Section `json:"section,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [3]bool
@@ -58,13 +64,17 @@ func (e PartEdges) PropertiesOrErr() ([]*Property, error) {
 	return nil, &NotLoadedError{edge: "properties"}
 }
 
-// SectionsOrErr returns the Sections value or an error if the edge
-// was not loaded in eager-loading.
-func (e PartEdges) SectionsOrErr() ([]*Section, error) {
+// SectionOrErr returns the Section value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e PartEdges) SectionOrErr() (*Section, error) {
 	if e.loadedTypes[2] {
-		return e.Sections, nil
+		if e.Section == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: section.Label}
+		}
+		return e.Section, nil
 	}
-	return nil, &NotLoadedError{edge: "sections"}
+	return nil, &NotLoadedError{edge: "section"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -72,12 +82,16 @@ func (*Part) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case part.FieldDeleted:
+			values[i] = new(sql.NullBool)
 		case part.FieldID:
 			values[i] = new(sql.NullInt64)
 		case part.FieldName, part.FieldDescription:
 			values[i] = new(sql.NullString)
-		case part.FieldCreatedAt:
+		case part.FieldCreatedAt, part.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case part.ForeignKeys[0]: // part_section
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Part", columns[i])
 		}
@@ -105,6 +119,18 @@ func (pa *Part) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				pa.CreatedAt = value.Time
 			}
+		case part.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updatedAt", values[i])
+			} else if value.Valid {
+				pa.UpdatedAt = value.Time
+			}
+		case part.FieldDeleted:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field deleted", values[i])
+			} else if value.Valid {
+				pa.Deleted = value.Bool
+			}
 		case part.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -116,6 +142,13 @@ func (pa *Part) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
 				pa.Description = value.String
+			}
+		case part.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field part_section", value)
+			} else if value.Valid {
+				pa.part_section = new(int)
+				*pa.part_section = int(value.Int64)
 			}
 		}
 	}
@@ -132,9 +165,9 @@ func (pa *Part) QueryProperties() *PropertyQuery {
 	return NewPartClient(pa.config).QueryProperties(pa)
 }
 
-// QuerySections queries the "sections" edge of the Part entity.
-func (pa *Part) QuerySections() *SectionQuery {
-	return NewPartClient(pa.config).QuerySections(pa)
+// QuerySection queries the "section" edge of the Part entity.
+func (pa *Part) QuerySection() *SectionQuery {
+	return NewPartClient(pa.config).QuerySection(pa)
 }
 
 // Update returns a builder for updating this Part.
@@ -162,6 +195,12 @@ func (pa *Part) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", pa.ID))
 	builder.WriteString("createdAt=")
 	builder.WriteString(pa.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("updatedAt=")
+	builder.WriteString(pa.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("deleted=")
+	builder.WriteString(fmt.Sprintf("%v", pa.Deleted))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(pa.Name)

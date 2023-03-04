@@ -13,6 +13,7 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/box"
 	"github.com/niwla23/lagersystem/manager/ent/position"
 	"github.com/niwla23/lagersystem/manager/ent/predicate"
+	"github.com/niwla23/lagersystem/manager/ent/warehouse"
 )
 
 // PositionQuery is the builder for querying Position entities.
@@ -23,6 +24,7 @@ type PositionQuery struct {
 	inters        []Interceptor
 	predicates    []predicate.Position
 	withStoredBox *BoxQuery
+	withWarehouse *WarehouseQuery
 	withFKs       bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -75,6 +77,28 @@ func (pq *PositionQuery) QueryStoredBox() *BoxQuery {
 			sqlgraph.From(position.Table, position.FieldID, selector),
 			sqlgraph.To(box.Table, box.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, true, position.StoredBoxTable, position.StoredBoxColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryWarehouse chains the current query on the "warehouse" edge.
+func (pq *PositionQuery) QueryWarehouse() *WarehouseQuery {
+	query := (&WarehouseClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(position.Table, position.FieldID, selector),
+			sqlgraph.To(warehouse.Table, warehouse.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, position.WarehouseTable, position.WarehouseColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -273,6 +297,7 @@ func (pq *PositionQuery) Clone() *PositionQuery {
 		inters:        append([]Interceptor{}, pq.inters...),
 		predicates:    append([]predicate.Position{}, pq.predicates...),
 		withStoredBox: pq.withStoredBox.Clone(),
+		withWarehouse: pq.withWarehouse.Clone(),
 		// clone intermediate query.
 		sql:  pq.sql.Clone(),
 		path: pq.path,
@@ -287,6 +312,17 @@ func (pq *PositionQuery) WithStoredBox(opts ...func(*BoxQuery)) *PositionQuery {
 		opt(query)
 	}
 	pq.withStoredBox = query
+	return pq
+}
+
+// WithWarehouse tells the query-builder to eager-load the nodes that are connected to
+// the "warehouse" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *PositionQuery) WithWarehouse(opts ...func(*WarehouseQuery)) *PositionQuery {
+	query := (&WarehouseClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withWarehouse = query
 	return pq
 }
 
@@ -369,11 +405,12 @@ func (pq *PositionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pos
 		nodes       = []*Position{}
 		withFKs     = pq.withFKs
 		_spec       = pq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			pq.withStoredBox != nil,
+			pq.withWarehouse != nil,
 		}
 	)
-	if pq.withStoredBox != nil {
+	if pq.withStoredBox != nil || pq.withWarehouse != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -400,6 +437,12 @@ func (pq *PositionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pos
 	if query := pq.withStoredBox; query != nil {
 		if err := pq.loadStoredBox(ctx, query, nodes, nil,
 			func(n *Position, e *Box) { n.Edges.StoredBox = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := pq.withWarehouse; query != nil {
+		if err := pq.loadWarehouse(ctx, query, nodes, nil,
+			func(n *Position, e *Warehouse) { n.Edges.Warehouse = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -431,6 +474,38 @@ func (pq *PositionQuery) loadStoredBox(ctx context.Context, query *BoxQuery, nod
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "box_position" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (pq *PositionQuery) loadWarehouse(ctx context.Context, query *WarehouseQuery, nodes []*Position, init func(*Position), assign func(*Position, *Warehouse)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Position)
+	for i := range nodes {
+		if nodes[i].warehouse_positions == nil {
+			continue
+		}
+		fk := *nodes[i].warehouse_positions
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(warehouse.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "warehouse_positions" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

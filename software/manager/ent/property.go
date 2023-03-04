@@ -19,6 +19,8 @@ type Property struct {
 	ID int `json:"id,omitempty"`
 	// CreatedAt holds the value of the "createdAt" field.
 	CreatedAt time.Time `json:"createdAt,omitempty"`
+	// UpdatedAt holds the value of the "updatedAt" field.
+	UpdatedAt time.Time `json:"updatedAt,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Value holds the value of the "value" field.
@@ -62,7 +64,7 @@ func (*Property) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case property.FieldName, property.FieldValue, property.FieldType:
 			values[i] = new(sql.NullString)
-		case property.FieldCreatedAt:
+		case property.FieldCreatedAt, property.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case property.ForeignKeys[0]: // part_properties
 			values[i] = new(sql.NullInt64)
@@ -92,6 +94,12 @@ func (pr *Property) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
 			} else if value.Valid {
 				pr.CreatedAt = value.Time
+			}
+		case property.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updatedAt", values[i])
+			} else if value.Valid {
+				pr.UpdatedAt = value.Time
 			}
 		case property.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -153,6 +161,9 @@ func (pr *Property) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", pr.ID))
 	builder.WriteString("createdAt=")
 	builder.WriteString(pr.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("updatedAt=")
+	builder.WriteString(pr.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(pr.Name)

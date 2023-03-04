@@ -43,6 +43,20 @@ func (pu *PropertyUpdate) SetNillableCreatedAt(t *time.Time) *PropertyUpdate {
 	return pu
 }
 
+// SetUpdatedAt sets the "updatedAt" field.
+func (pu *PropertyUpdate) SetUpdatedAt(t time.Time) *PropertyUpdate {
+	pu.mutation.SetUpdatedAt(t)
+	return pu
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (pu *PropertyUpdate) SetNillableUpdatedAt(t *time.Time) *PropertyUpdate {
+	if t != nil {
+		pu.SetUpdatedAt(*t)
+	}
+	return pu
+}
+
 // SetName sets the "name" field.
 func (pu *PropertyUpdate) SetName(s string) *PropertyUpdate {
 	pu.mutation.SetName(s)
@@ -162,6 +176,9 @@ func (pu *PropertyUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := pu.mutation.CreatedAt(); ok {
 		_spec.SetField(property.FieldCreatedAt, field.TypeTime, value)
 	}
+	if value, ok := pu.mutation.UpdatedAt(); ok {
+		_spec.SetField(property.FieldUpdatedAt, field.TypeTime, value)
+	}
 	if value, ok := pu.mutation.Name(); ok {
 		_spec.SetField(property.FieldName, field.TypeString, value)
 	}
@@ -236,6 +253,20 @@ func (puo *PropertyUpdateOne) SetCreatedAt(t time.Time) *PropertyUpdateOne {
 func (puo *PropertyUpdateOne) SetNillableCreatedAt(t *time.Time) *PropertyUpdateOne {
 	if t != nil {
 		puo.SetCreatedAt(*t)
+	}
+	return puo
+}
+
+// SetUpdatedAt sets the "updatedAt" field.
+func (puo *PropertyUpdateOne) SetUpdatedAt(t time.Time) *PropertyUpdateOne {
+	puo.mutation.SetUpdatedAt(t)
+	return puo
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (puo *PropertyUpdateOne) SetNillableUpdatedAt(t *time.Time) *PropertyUpdateOne {
+	if t != nil {
+		puo.SetUpdatedAt(*t)
 	}
 	return puo
 }
@@ -382,6 +413,9 @@ func (puo *PropertyUpdateOne) sqlSave(ctx context.Context) (_node *Property, err
 	}
 	if value, ok := puo.mutation.CreatedAt(); ok {
 		_spec.SetField(property.FieldCreatedAt, field.TypeTime, value)
+	}
+	if value, ok := puo.mutation.UpdatedAt(); ok {
+		_spec.SetField(property.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := puo.mutation.Name(); ok {
 		_spec.SetField(property.FieldName, field.TypeString, value)

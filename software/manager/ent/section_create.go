@@ -36,6 +36,20 @@ func (sc *SectionCreate) SetNillableCreatedAt(t *time.Time) *SectionCreate {
 	return sc
 }
 
+// SetUpdatedAt sets the "updatedAt" field.
+func (sc *SectionCreate) SetUpdatedAt(t time.Time) *SectionCreate {
+	sc.mutation.SetUpdatedAt(t)
+	return sc
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (sc *SectionCreate) SetNillableUpdatedAt(t *time.Time) *SectionCreate {
+	if t != nil {
+		sc.SetUpdatedAt(*t)
+	}
+	return sc
+}
+
 // SetBoxID sets the "box" edge to the Box entity by ID.
 func (sc *SectionCreate) SetBoxID(id int) *SectionCreate {
 	sc.mutation.SetBoxID(id)
@@ -77,7 +91,9 @@ func (sc *SectionCreate) Mutation() *SectionMutation {
 
 // Save creates the Section in the database.
 func (sc *SectionCreate) Save(ctx context.Context) (*Section, error) {
-	sc.defaults()
+	if err := sc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks[*Section, SectionMutation](ctx, sc.sqlSave, sc.mutation, sc.hooks)
 }
 
@@ -104,17 +120,31 @@ func (sc *SectionCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (sc *SectionCreate) defaults() {
+func (sc *SectionCreate) defaults() error {
 	if _, ok := sc.mutation.CreatedAt(); !ok {
+		if section.DefaultCreatedAt == nil {
+			return fmt.Errorf("ent: uninitialized section.DefaultCreatedAt (forgotten import ent/runtime?)")
+		}
 		v := section.DefaultCreatedAt()
 		sc.mutation.SetCreatedAt(v)
 	}
+	if _, ok := sc.mutation.UpdatedAt(); !ok {
+		if section.DefaultUpdatedAt == nil {
+			return fmt.Errorf("ent: uninitialized section.DefaultUpdatedAt (forgotten import ent/runtime?)")
+		}
+		v := section.DefaultUpdatedAt()
+		sc.mutation.SetUpdatedAt(v)
+	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (sc *SectionCreate) check() error {
 	if _, ok := sc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Section.createdAt"`)}
+	}
+	if _, ok := sc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updatedAt", err: errors.New(`ent: missing required field "Section.updatedAt"`)}
 	}
 	return nil
 }
@@ -152,6 +182,10 @@ func (sc *SectionCreate) createSpec() (*Section, *sqlgraph.CreateSpec) {
 		_spec.SetField(section.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
+	if value, ok := sc.mutation.UpdatedAt(); ok {
+		_spec.SetField(section.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
+	}
 	if nodes := sc.mutation.BoxIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -174,10 +208,10 @@ func (sc *SectionCreate) createSpec() (*Section, *sqlgraph.CreateSpec) {
 	}
 	if nodes := sc.mutation.PartsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
 			Table:   section.PartsTable,
-			Columns: section.PartsPrimaryKey,
+			Columns: []string{section.PartsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

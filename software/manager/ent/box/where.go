@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/predicate"
 )
 
@@ -60,6 +61,16 @@ func CreatedAt(v time.Time) predicate.Box {
 	return predicate.Box(sql.FieldEQ(FieldCreatedAt, v))
 }
 
+// UpdatedAt applies equality check predicate on the "updatedAt" field. It's identical to UpdatedAtEQ.
+func UpdatedAt(v time.Time) predicate.Box {
+	return predicate.Box(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
+// BoxId applies equality check predicate on the "boxId" field. It's identical to BoxIdEQ.
+func BoxId(v uuid.UUID) predicate.Box {
+	return predicate.Box(sql.FieldEQ(FieldBoxId, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "createdAt" field.
 func CreatedAtEQ(v time.Time) predicate.Box {
 	return predicate.Box(sql.FieldEQ(FieldCreatedAt, v))
@@ -98,6 +109,86 @@ func CreatedAtLT(v time.Time) predicate.Box {
 // CreatedAtLTE applies the LTE predicate on the "createdAt" field.
 func CreatedAtLTE(v time.Time) predicate.Box {
 	return predicate.Box(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// UpdatedAtEQ applies the EQ predicate on the "updatedAt" field.
+func UpdatedAtEQ(v time.Time) predicate.Box {
+	return predicate.Box(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtNEQ applies the NEQ predicate on the "updatedAt" field.
+func UpdatedAtNEQ(v time.Time) predicate.Box {
+	return predicate.Box(sql.FieldNEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtIn applies the In predicate on the "updatedAt" field.
+func UpdatedAtIn(vs ...time.Time) predicate.Box {
+	return predicate.Box(sql.FieldIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtNotIn applies the NotIn predicate on the "updatedAt" field.
+func UpdatedAtNotIn(vs ...time.Time) predicate.Box {
+	return predicate.Box(sql.FieldNotIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtGT applies the GT predicate on the "updatedAt" field.
+func UpdatedAtGT(v time.Time) predicate.Box {
+	return predicate.Box(sql.FieldGT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtGTE applies the GTE predicate on the "updatedAt" field.
+func UpdatedAtGTE(v time.Time) predicate.Box {
+	return predicate.Box(sql.FieldGTE(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLT applies the LT predicate on the "updatedAt" field.
+func UpdatedAtLT(v time.Time) predicate.Box {
+	return predicate.Box(sql.FieldLT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLTE applies the LTE predicate on the "updatedAt" field.
+func UpdatedAtLTE(v time.Time) predicate.Box {
+	return predicate.Box(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// BoxIdEQ applies the EQ predicate on the "boxId" field.
+func BoxIdEQ(v uuid.UUID) predicate.Box {
+	return predicate.Box(sql.FieldEQ(FieldBoxId, v))
+}
+
+// BoxIdNEQ applies the NEQ predicate on the "boxId" field.
+func BoxIdNEQ(v uuid.UUID) predicate.Box {
+	return predicate.Box(sql.FieldNEQ(FieldBoxId, v))
+}
+
+// BoxIdIn applies the In predicate on the "boxId" field.
+func BoxIdIn(vs ...uuid.UUID) predicate.Box {
+	return predicate.Box(sql.FieldIn(FieldBoxId, vs...))
+}
+
+// BoxIdNotIn applies the NotIn predicate on the "boxId" field.
+func BoxIdNotIn(vs ...uuid.UUID) predicate.Box {
+	return predicate.Box(sql.FieldNotIn(FieldBoxId, vs...))
+}
+
+// BoxIdGT applies the GT predicate on the "boxId" field.
+func BoxIdGT(v uuid.UUID) predicate.Box {
+	return predicate.Box(sql.FieldGT(FieldBoxId, v))
+}
+
+// BoxIdGTE applies the GTE predicate on the "boxId" field.
+func BoxIdGTE(v uuid.UUID) predicate.Box {
+	return predicate.Box(sql.FieldGTE(FieldBoxId, v))
+}
+
+// BoxIdLT applies the LT predicate on the "boxId" field.
+func BoxIdLT(v uuid.UUID) predicate.Box {
+	return predicate.Box(sql.FieldLT(FieldBoxId, v))
+}
+
+// BoxIdLTE applies the LTE predicate on the "boxId" field.
+func BoxIdLTE(v uuid.UUID) predicate.Box {
+	return predicate.Box(sql.FieldLTE(FieldBoxId, v))
 }
 
 // HasSections applies the HasEdge predicate on the "sections" edge.
@@ -145,33 +236,6 @@ func HasPositionWith(preds ...predicate.Position) predicate.Box {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(PositionInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, PositionTable, PositionColumn),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasSystem applies the HasEdge predicate on the "system" edge.
-func HasSystem() predicate.Box {
-	return predicate.Box(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, SystemTable, SystemColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasSystemWith applies the HasEdge predicate on the "system" edge with a given conditions (other predicates).
-func HasSystemWith(preds ...predicate.System) predicate.Box {
-	return predicate.Box(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(SystemInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, SystemTable, SystemColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

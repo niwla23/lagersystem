@@ -10,10 +10,10 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/box"
 	"github.com/niwla23/lagersystem/manager/ent/position"
 	"github.com/niwla23/lagersystem/manager/ent/section"
-	"github.com/niwla23/lagersystem/manager/ent/system"
 )
 
 // BoxCreate is the builder for creating a Box entity.
@@ -34,6 +34,26 @@ func (bc *BoxCreate) SetNillableCreatedAt(t *time.Time) *BoxCreate {
 	if t != nil {
 		bc.SetCreatedAt(*t)
 	}
+	return bc
+}
+
+// SetUpdatedAt sets the "updatedAt" field.
+func (bc *BoxCreate) SetUpdatedAt(t time.Time) *BoxCreate {
+	bc.mutation.SetUpdatedAt(t)
+	return bc
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (bc *BoxCreate) SetNillableUpdatedAt(t *time.Time) *BoxCreate {
+	if t != nil {
+		bc.SetUpdatedAt(*t)
+	}
+	return bc
+}
+
+// SetBoxId sets the "boxId" field.
+func (bc *BoxCreate) SetBoxId(u uuid.UUID) *BoxCreate {
+	bc.mutation.SetBoxId(u)
 	return bc
 }
 
@@ -71,25 +91,6 @@ func (bc *BoxCreate) SetPosition(p *Position) *BoxCreate {
 	return bc.SetPositionID(p.ID)
 }
 
-// SetSystemID sets the "system" edge to the System entity by ID.
-func (bc *BoxCreate) SetSystemID(id int) *BoxCreate {
-	bc.mutation.SetSystemID(id)
-	return bc
-}
-
-// SetNillableSystemID sets the "system" edge to the System entity by ID if the given value is not nil.
-func (bc *BoxCreate) SetNillableSystemID(id *int) *BoxCreate {
-	if id != nil {
-		bc = bc.SetSystemID(*id)
-	}
-	return bc
-}
-
-// SetSystem sets the "system" edge to the System entity.
-func (bc *BoxCreate) SetSystem(s *System) *BoxCreate {
-	return bc.SetSystemID(s.ID)
-}
-
 // Mutation returns the BoxMutation object of the builder.
 func (bc *BoxCreate) Mutation() *BoxMutation {
 	return bc.mutation
@@ -97,7 +98,9 @@ func (bc *BoxCreate) Mutation() *BoxMutation {
 
 // Save creates the Box in the database.
 func (bc *BoxCreate) Save(ctx context.Context) (*Box, error) {
-	bc.defaults()
+	if err := bc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks[*Box, BoxMutation](ctx, bc.sqlSave, bc.mutation, bc.hooks)
 }
 
@@ -124,17 +127,34 @@ func (bc *BoxCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (bc *BoxCreate) defaults() {
+func (bc *BoxCreate) defaults() error {
 	if _, ok := bc.mutation.CreatedAt(); !ok {
+		if box.DefaultCreatedAt == nil {
+			return fmt.Errorf("ent: uninitialized box.DefaultCreatedAt (forgotten import ent/runtime?)")
+		}
 		v := box.DefaultCreatedAt()
 		bc.mutation.SetCreatedAt(v)
 	}
+	if _, ok := bc.mutation.UpdatedAt(); !ok {
+		if box.DefaultUpdatedAt == nil {
+			return fmt.Errorf("ent: uninitialized box.DefaultUpdatedAt (forgotten import ent/runtime?)")
+		}
+		v := box.DefaultUpdatedAt()
+		bc.mutation.SetUpdatedAt(v)
+	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (bc *BoxCreate) check() error {
 	if _, ok := bc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Box.createdAt"`)}
+	}
+	if _, ok := bc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updatedAt", err: errors.New(`ent: missing required field "Box.updatedAt"`)}
+	}
+	if _, ok := bc.mutation.BoxId(); !ok {
+		return &ValidationError{Name: "boxId", err: errors.New(`ent: missing required field "Box.boxId"`)}
 	}
 	return nil
 }
@@ -172,6 +192,14 @@ func (bc *BoxCreate) createSpec() (*Box, *sqlgraph.CreateSpec) {
 		_spec.SetField(box.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
+	if value, ok := bc.mutation.UpdatedAt(); ok {
+		_spec.SetField(box.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
+	}
+	if value, ok := bc.mutation.BoxId(); ok {
+		_spec.SetField(box.FieldBoxId, field.TypeUUID, value)
+		_node.BoxId = value
+	}
 	if nodes := bc.mutation.SectionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -208,26 +236,6 @@ func (bc *BoxCreate) createSpec() (*Box, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := bc.mutation.SystemIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   box.SystemTable,
-			Columns: []string{box.SystemColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: system.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.system_boxes = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

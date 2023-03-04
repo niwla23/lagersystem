@@ -22,10 +22,10 @@ type Tx struct {
 	Property *PropertyClient
 	// Section is the client for interacting with the Section builders.
 	Section *SectionClient
-	// System is the client for interacting with the System builders.
-	System *SystemClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
+	// Warehouse is the client for interacting with the Warehouse builders.
+	Warehouse *WarehouseClient
 
 	// lazily loaded.
 	client     *Client
@@ -162,8 +162,8 @@ func (tx *Tx) init() {
 	tx.Position = NewPositionClient(tx.config)
 	tx.Property = NewPropertyClient(tx.config)
 	tx.Section = NewSectionClient(tx.config)
-	tx.System = NewSystemClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
+	tx.Warehouse = NewWarehouseClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

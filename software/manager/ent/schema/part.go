@@ -1,11 +1,14 @@
 package schema
 
 import (
+	"context"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	gen "github.com/niwla23/lagersystem/manager/ent"
+	"github.com/niwla23/lagersystem/manager/ent/hook"
 )
 
 // Part holds the schema definition for the Part entity.
@@ -17,6 +20,8 @@ type Part struct {
 func (Part) Fields() []ent.Field {
 	return []ent.Field{
 		field.Time("createdAt").Default(time.Now),
+		field.Time("updatedAt").Default(time.Now),
+		field.Bool("deleted").Default(false),
 		field.String("name").NotEmpty().Unique(),
 		field.String("description"),
 	}
@@ -27,7 +32,23 @@ func (Part) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("tags", Tag.Type),
 		edge.To("properties", Property.Type),
-		edge.To("sections", Section.Type),
+		edge.To("section", Section.Type).Unique(),
+	}
+}
+
+// Hooks of the Card.
+func (Part) Hooks() []ent.Hook {
+	return []ent.Hook{
+		// update modifiedAt
+		hook.On(
+			func(next ent.Mutator) ent.Mutator {
+				return hook.PartFunc(func(ctx context.Context, m *gen.PartMutation) (ent.Value, error) {
+					m.SetUpdatedAt(time.Now())
+					return next.Mutate(ctx, m)
+				})
+			},
+			ent.OpUpdate|ent.OpUpdateOne,
+		),
 	}
 }
 

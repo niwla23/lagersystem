@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/niwla23/lagersystem/manager/ent/box"
 	"github.com/niwla23/lagersystem/manager/ent/position"
+	"github.com/niwla23/lagersystem/manager/ent/warehouse"
 )
 
 // Position is the model entity for the Position schema.
@@ -19,21 +20,26 @@ type Position struct {
 	ID int `json:"id,omitempty"`
 	// CreatedAt holds the value of the "createdAt" field.
 	CreatedAt time.Time `json:"createdAt,omitempty"`
+	// UpdatedAt holds the value of the "updatedAt" field.
+	UpdatedAt time.Time `json:"updatedAt,omitempty"`
 	// PositionId holds the value of the "positionId" field.
 	PositionId int `json:"positionId,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PositionQuery when eager-loading is set.
-	Edges        PositionEdges `json:"edges"`
-	box_position *int
+	Edges               PositionEdges `json:"edges"`
+	box_position        *int
+	warehouse_positions *int
 }
 
 // PositionEdges holds the relations/edges for other nodes in the graph.
 type PositionEdges struct {
 	// StoredBox holds the value of the storedBox edge.
 	StoredBox *Box `json:"storedBox,omitempty"`
+	// Warehouse holds the value of the warehouse edge.
+	Warehouse *Warehouse `json:"warehouse,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // StoredBoxOrErr returns the StoredBox value or an error if the edge
@@ -49,6 +55,19 @@ func (e PositionEdges) StoredBoxOrErr() (*Box, error) {
 	return nil, &NotLoadedError{edge: "storedBox"}
 }
 
+// WarehouseOrErr returns the Warehouse value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e PositionEdges) WarehouseOrErr() (*Warehouse, error) {
+	if e.loadedTypes[1] {
+		if e.Warehouse == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: warehouse.Label}
+		}
+		return e.Warehouse, nil
+	}
+	return nil, &NotLoadedError{edge: "warehouse"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Position) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -56,9 +75,11 @@ func (*Position) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case position.FieldID, position.FieldPositionId:
 			values[i] = new(sql.NullInt64)
-		case position.FieldCreatedAt:
+		case position.FieldCreatedAt, position.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case position.ForeignKeys[0]: // box_position
+			values[i] = new(sql.NullInt64)
+		case position.ForeignKeys[1]: // warehouse_positions
 			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Position", columns[i])
@@ -87,6 +108,12 @@ func (po *Position) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				po.CreatedAt = value.Time
 			}
+		case position.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updatedAt", values[i])
+			} else if value.Valid {
+				po.UpdatedAt = value.Time
+			}
 		case position.FieldPositionId:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field positionId", values[i])
@@ -100,6 +127,13 @@ func (po *Position) assignValues(columns []string, values []any) error {
 				po.box_position = new(int)
 				*po.box_position = int(value.Int64)
 			}
+		case position.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field warehouse_positions", value)
+			} else if value.Valid {
+				po.warehouse_positions = new(int)
+				*po.warehouse_positions = int(value.Int64)
+			}
 		}
 	}
 	return nil
@@ -108,6 +142,11 @@ func (po *Position) assignValues(columns []string, values []any) error {
 // QueryStoredBox queries the "storedBox" edge of the Position entity.
 func (po *Position) QueryStoredBox() *BoxQuery {
 	return NewPositionClient(po.config).QueryStoredBox(po)
+}
+
+// QueryWarehouse queries the "warehouse" edge of the Position entity.
+func (po *Position) QueryWarehouse() *WarehouseQuery {
+	return NewPositionClient(po.config).QueryWarehouse(po)
 }
 
 // Update returns a builder for updating this Position.
@@ -135,6 +174,9 @@ func (po *Position) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", po.ID))
 	builder.WriteString("createdAt=")
 	builder.WriteString(po.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("updatedAt=")
+	builder.WriteString(po.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("positionId=")
 	builder.WriteString(fmt.Sprintf("%v", po.PositionId))

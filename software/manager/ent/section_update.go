@@ -44,6 +44,20 @@ func (su *SectionUpdate) SetNillableCreatedAt(t *time.Time) *SectionUpdate {
 	return su
 }
 
+// SetUpdatedAt sets the "updatedAt" field.
+func (su *SectionUpdate) SetUpdatedAt(t time.Time) *SectionUpdate {
+	su.mutation.SetUpdatedAt(t)
+	return su
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (su *SectionUpdate) SetNillableUpdatedAt(t *time.Time) *SectionUpdate {
+	if t != nil {
+		su.SetUpdatedAt(*t)
+	}
+	return su
+}
+
 // SetBoxID sets the "box" edge to the Box entity by ID.
 func (su *SectionUpdate) SetBoxID(id int) *SectionUpdate {
 	su.mutation.SetBoxID(id)
@@ -158,6 +172,9 @@ func (su *SectionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := su.mutation.CreatedAt(); ok {
 		_spec.SetField(section.FieldCreatedAt, field.TypeTime, value)
 	}
+	if value, ok := su.mutation.UpdatedAt(); ok {
+		_spec.SetField(section.FieldUpdatedAt, field.TypeTime, value)
+	}
 	if su.mutation.BoxCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -195,10 +212,10 @@ func (su *SectionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if su.mutation.PartsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
 			Table:   section.PartsTable,
-			Columns: section.PartsPrimaryKey,
+			Columns: []string{section.PartsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -211,10 +228,10 @@ func (su *SectionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := su.mutation.RemovedPartsIDs(); len(nodes) > 0 && !su.mutation.PartsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
 			Table:   section.PartsTable,
-			Columns: section.PartsPrimaryKey,
+			Columns: []string{section.PartsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -230,10 +247,10 @@ func (su *SectionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := su.mutation.PartsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
 			Table:   section.PartsTable,
-			Columns: section.PartsPrimaryKey,
+			Columns: []string{section.PartsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -277,6 +294,20 @@ func (suo *SectionUpdateOne) SetCreatedAt(t time.Time) *SectionUpdateOne {
 func (suo *SectionUpdateOne) SetNillableCreatedAt(t *time.Time) *SectionUpdateOne {
 	if t != nil {
 		suo.SetCreatedAt(*t)
+	}
+	return suo
+}
+
+// SetUpdatedAt sets the "updatedAt" field.
+func (suo *SectionUpdateOne) SetUpdatedAt(t time.Time) *SectionUpdateOne {
+	suo.mutation.SetUpdatedAt(t)
+	return suo
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (suo *SectionUpdateOne) SetNillableUpdatedAt(t *time.Time) *SectionUpdateOne {
+	if t != nil {
+		suo.SetUpdatedAt(*t)
 	}
 	return suo
 }
@@ -419,6 +450,9 @@ func (suo *SectionUpdateOne) sqlSave(ctx context.Context) (_node *Section, err e
 	if value, ok := suo.mutation.CreatedAt(); ok {
 		_spec.SetField(section.FieldCreatedAt, field.TypeTime, value)
 	}
+	if value, ok := suo.mutation.UpdatedAt(); ok {
+		_spec.SetField(section.FieldUpdatedAt, field.TypeTime, value)
+	}
 	if suo.mutation.BoxCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -456,10 +490,10 @@ func (suo *SectionUpdateOne) sqlSave(ctx context.Context) (_node *Section, err e
 	}
 	if suo.mutation.PartsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
 			Table:   section.PartsTable,
-			Columns: section.PartsPrimaryKey,
+			Columns: []string{section.PartsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -472,10 +506,10 @@ func (suo *SectionUpdateOne) sqlSave(ctx context.Context) (_node *Section, err e
 	}
 	if nodes := suo.mutation.RemovedPartsIDs(); len(nodes) > 0 && !suo.mutation.PartsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
 			Table:   section.PartsTable,
-			Columns: section.PartsPrimaryKey,
+			Columns: []string{section.PartsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -491,10 +525,10 @@ func (suo *SectionUpdateOne) sqlSave(ctx context.Context) (_node *Section, err e
 	}
 	if nodes := suo.mutation.PartsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
 			Table:   section.PartsTable,
-			Columns: section.PartsPrimaryKey,
+			Columns: []string{section.PartsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

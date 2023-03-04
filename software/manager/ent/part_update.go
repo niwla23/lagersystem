@@ -45,6 +45,34 @@ func (pu *PartUpdate) SetNillableCreatedAt(t *time.Time) *PartUpdate {
 	return pu
 }
 
+// SetUpdatedAt sets the "updatedAt" field.
+func (pu *PartUpdate) SetUpdatedAt(t time.Time) *PartUpdate {
+	pu.mutation.SetUpdatedAt(t)
+	return pu
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (pu *PartUpdate) SetNillableUpdatedAt(t *time.Time) *PartUpdate {
+	if t != nil {
+		pu.SetUpdatedAt(*t)
+	}
+	return pu
+}
+
+// SetDeleted sets the "deleted" field.
+func (pu *PartUpdate) SetDeleted(b bool) *PartUpdate {
+	pu.mutation.SetDeleted(b)
+	return pu
+}
+
+// SetNillableDeleted sets the "deleted" field if the given value is not nil.
+func (pu *PartUpdate) SetNillableDeleted(b *bool) *PartUpdate {
+	if b != nil {
+		pu.SetDeleted(*b)
+	}
+	return pu
+}
+
 // SetName sets the "name" field.
 func (pu *PartUpdate) SetName(s string) *PartUpdate {
 	pu.mutation.SetName(s)
@@ -87,19 +115,23 @@ func (pu *PartUpdate) AddProperties(p ...*Property) *PartUpdate {
 	return pu.AddPropertyIDs(ids...)
 }
 
-// AddSectionIDs adds the "sections" edge to the Section entity by IDs.
-func (pu *PartUpdate) AddSectionIDs(ids ...int) *PartUpdate {
-	pu.mutation.AddSectionIDs(ids...)
+// SetSectionID sets the "section" edge to the Section entity by ID.
+func (pu *PartUpdate) SetSectionID(id int) *PartUpdate {
+	pu.mutation.SetSectionID(id)
 	return pu
 }
 
-// AddSections adds the "sections" edges to the Section entity.
-func (pu *PartUpdate) AddSections(s ...*Section) *PartUpdate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// SetNillableSectionID sets the "section" edge to the Section entity by ID if the given value is not nil.
+func (pu *PartUpdate) SetNillableSectionID(id *int) *PartUpdate {
+	if id != nil {
+		pu = pu.SetSectionID(*id)
 	}
-	return pu.AddSectionIDs(ids...)
+	return pu
+}
+
+// SetSection sets the "section" edge to the Section entity.
+func (pu *PartUpdate) SetSection(s *Section) *PartUpdate {
+	return pu.SetSectionID(s.ID)
 }
 
 // Mutation returns the PartMutation object of the builder.
@@ -149,25 +181,10 @@ func (pu *PartUpdate) RemoveProperties(p ...*Property) *PartUpdate {
 	return pu.RemovePropertyIDs(ids...)
 }
 
-// ClearSections clears all "sections" edges to the Section entity.
-func (pu *PartUpdate) ClearSections() *PartUpdate {
-	pu.mutation.ClearSections()
+// ClearSection clears the "section" edge to the Section entity.
+func (pu *PartUpdate) ClearSection() *PartUpdate {
+	pu.mutation.ClearSection()
 	return pu
-}
-
-// RemoveSectionIDs removes the "sections" edge to Section entities by IDs.
-func (pu *PartUpdate) RemoveSectionIDs(ids ...int) *PartUpdate {
-	pu.mutation.RemoveSectionIDs(ids...)
-	return pu
-}
-
-// RemoveSections removes "sections" edges to Section entities.
-func (pu *PartUpdate) RemoveSections(s ...*Section) *PartUpdate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return pu.RemoveSectionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -230,6 +247,12 @@ func (pu *PartUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := pu.mutation.CreatedAt(); ok {
 		_spec.SetField(part.FieldCreatedAt, field.TypeTime, value)
+	}
+	if value, ok := pu.mutation.UpdatedAt(); ok {
+		_spec.SetField(part.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := pu.mutation.Deleted(); ok {
+		_spec.SetField(part.FieldDeleted, field.TypeBool, value)
 	}
 	if value, ok := pu.mutation.Name(); ok {
 		_spec.SetField(part.FieldName, field.TypeString, value)
@@ -345,12 +368,12 @@ func (pu *PartUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if pu.mutation.SectionsCleared() {
+	if pu.mutation.SectionCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   part.SectionsTable,
-			Columns: part.SectionsPrimaryKey,
+			Table:   part.SectionTable,
+			Columns: []string{part.SectionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -361,31 +384,12 @@ func (pu *PartUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.RemovedSectionsIDs(); len(nodes) > 0 && !pu.mutation.SectionsCleared() {
+	if nodes := pu.mutation.SectionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   part.SectionsTable,
-			Columns: part.SectionsPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: section.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := pu.mutation.SectionsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   part.SectionsTable,
-			Columns: part.SectionsPrimaryKey,
+			Table:   part.SectionTable,
+			Columns: []string{part.SectionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -433,6 +437,34 @@ func (puo *PartUpdateOne) SetNillableCreatedAt(t *time.Time) *PartUpdateOne {
 	return puo
 }
 
+// SetUpdatedAt sets the "updatedAt" field.
+func (puo *PartUpdateOne) SetUpdatedAt(t time.Time) *PartUpdateOne {
+	puo.mutation.SetUpdatedAt(t)
+	return puo
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (puo *PartUpdateOne) SetNillableUpdatedAt(t *time.Time) *PartUpdateOne {
+	if t != nil {
+		puo.SetUpdatedAt(*t)
+	}
+	return puo
+}
+
+// SetDeleted sets the "deleted" field.
+func (puo *PartUpdateOne) SetDeleted(b bool) *PartUpdateOne {
+	puo.mutation.SetDeleted(b)
+	return puo
+}
+
+// SetNillableDeleted sets the "deleted" field if the given value is not nil.
+func (puo *PartUpdateOne) SetNillableDeleted(b *bool) *PartUpdateOne {
+	if b != nil {
+		puo.SetDeleted(*b)
+	}
+	return puo
+}
+
 // SetName sets the "name" field.
 func (puo *PartUpdateOne) SetName(s string) *PartUpdateOne {
 	puo.mutation.SetName(s)
@@ -475,19 +507,23 @@ func (puo *PartUpdateOne) AddProperties(p ...*Property) *PartUpdateOne {
 	return puo.AddPropertyIDs(ids...)
 }
 
-// AddSectionIDs adds the "sections" edge to the Section entity by IDs.
-func (puo *PartUpdateOne) AddSectionIDs(ids ...int) *PartUpdateOne {
-	puo.mutation.AddSectionIDs(ids...)
+// SetSectionID sets the "section" edge to the Section entity by ID.
+func (puo *PartUpdateOne) SetSectionID(id int) *PartUpdateOne {
+	puo.mutation.SetSectionID(id)
 	return puo
 }
 
-// AddSections adds the "sections" edges to the Section entity.
-func (puo *PartUpdateOne) AddSections(s ...*Section) *PartUpdateOne {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// SetNillableSectionID sets the "section" edge to the Section entity by ID if the given value is not nil.
+func (puo *PartUpdateOne) SetNillableSectionID(id *int) *PartUpdateOne {
+	if id != nil {
+		puo = puo.SetSectionID(*id)
 	}
-	return puo.AddSectionIDs(ids...)
+	return puo
+}
+
+// SetSection sets the "section" edge to the Section entity.
+func (puo *PartUpdateOne) SetSection(s *Section) *PartUpdateOne {
+	return puo.SetSectionID(s.ID)
 }
 
 // Mutation returns the PartMutation object of the builder.
@@ -537,25 +573,10 @@ func (puo *PartUpdateOne) RemoveProperties(p ...*Property) *PartUpdateOne {
 	return puo.RemovePropertyIDs(ids...)
 }
 
-// ClearSections clears all "sections" edges to the Section entity.
-func (puo *PartUpdateOne) ClearSections() *PartUpdateOne {
-	puo.mutation.ClearSections()
+// ClearSection clears the "section" edge to the Section entity.
+func (puo *PartUpdateOne) ClearSection() *PartUpdateOne {
+	puo.mutation.ClearSection()
 	return puo
-}
-
-// RemoveSectionIDs removes the "sections" edge to Section entities by IDs.
-func (puo *PartUpdateOne) RemoveSectionIDs(ids ...int) *PartUpdateOne {
-	puo.mutation.RemoveSectionIDs(ids...)
-	return puo
-}
-
-// RemoveSections removes "sections" edges to Section entities.
-func (puo *PartUpdateOne) RemoveSections(s ...*Section) *PartUpdateOne {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return puo.RemoveSectionIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -642,6 +663,12 @@ func (puo *PartUpdateOne) sqlSave(ctx context.Context) (_node *Part, err error) 
 	}
 	if value, ok := puo.mutation.CreatedAt(); ok {
 		_spec.SetField(part.FieldCreatedAt, field.TypeTime, value)
+	}
+	if value, ok := puo.mutation.UpdatedAt(); ok {
+		_spec.SetField(part.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := puo.mutation.Deleted(); ok {
+		_spec.SetField(part.FieldDeleted, field.TypeBool, value)
 	}
 	if value, ok := puo.mutation.Name(); ok {
 		_spec.SetField(part.FieldName, field.TypeString, value)
@@ -757,12 +784,12 @@ func (puo *PartUpdateOne) sqlSave(ctx context.Context) (_node *Part, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if puo.mutation.SectionsCleared() {
+	if puo.mutation.SectionCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   part.SectionsTable,
-			Columns: part.SectionsPrimaryKey,
+			Table:   part.SectionTable,
+			Columns: []string{part.SectionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -773,31 +800,12 @@ func (puo *PartUpdateOne) sqlSave(ctx context.Context) (_node *Part, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.RemovedSectionsIDs(); len(nodes) > 0 && !puo.mutation.SectionsCleared() {
+	if nodes := puo.mutation.SectionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   part.SectionsTable,
-			Columns: part.SectionsPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: section.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := puo.mutation.SectionsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   part.SectionsTable,
-			Columns: part.SectionsPrimaryKey,
+			Table:   part.SectionTable,
+			Columns: []string{part.SectionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

@@ -60,6 +60,16 @@ func CreatedAt(v time.Time) predicate.Part {
 	return predicate.Part(sql.FieldEQ(FieldCreatedAt, v))
 }
 
+// UpdatedAt applies equality check predicate on the "updatedAt" field. It's identical to UpdatedAtEQ.
+func UpdatedAt(v time.Time) predicate.Part {
+	return predicate.Part(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
+// Deleted applies equality check predicate on the "deleted" field. It's identical to DeletedEQ.
+func Deleted(v bool) predicate.Part {
+	return predicate.Part(sql.FieldEQ(FieldDeleted, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Part {
 	return predicate.Part(sql.FieldEQ(FieldName, v))
@@ -108,6 +118,56 @@ func CreatedAtLT(v time.Time) predicate.Part {
 // CreatedAtLTE applies the LTE predicate on the "createdAt" field.
 func CreatedAtLTE(v time.Time) predicate.Part {
 	return predicate.Part(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// UpdatedAtEQ applies the EQ predicate on the "updatedAt" field.
+func UpdatedAtEQ(v time.Time) predicate.Part {
+	return predicate.Part(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtNEQ applies the NEQ predicate on the "updatedAt" field.
+func UpdatedAtNEQ(v time.Time) predicate.Part {
+	return predicate.Part(sql.FieldNEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtIn applies the In predicate on the "updatedAt" field.
+func UpdatedAtIn(vs ...time.Time) predicate.Part {
+	return predicate.Part(sql.FieldIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtNotIn applies the NotIn predicate on the "updatedAt" field.
+func UpdatedAtNotIn(vs ...time.Time) predicate.Part {
+	return predicate.Part(sql.FieldNotIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtGT applies the GT predicate on the "updatedAt" field.
+func UpdatedAtGT(v time.Time) predicate.Part {
+	return predicate.Part(sql.FieldGT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtGTE applies the GTE predicate on the "updatedAt" field.
+func UpdatedAtGTE(v time.Time) predicate.Part {
+	return predicate.Part(sql.FieldGTE(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLT applies the LT predicate on the "updatedAt" field.
+func UpdatedAtLT(v time.Time) predicate.Part {
+	return predicate.Part(sql.FieldLT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLTE applies the LTE predicate on the "updatedAt" field.
+func UpdatedAtLTE(v time.Time) predicate.Part {
+	return predicate.Part(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// DeletedEQ applies the EQ predicate on the "deleted" field.
+func DeletedEQ(v bool) predicate.Part {
+	return predicate.Part(sql.FieldEQ(FieldDeleted, v))
+}
+
+// DeletedNEQ applies the NEQ predicate on the "deleted" field.
+func DeletedNEQ(v bool) predicate.Part {
+	return predicate.Part(sql.FieldNEQ(FieldDeleted, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.
@@ -294,24 +354,24 @@ func HasPropertiesWith(preds ...predicate.Property) predicate.Part {
 	})
 }
 
-// HasSections applies the HasEdge predicate on the "sections" edge.
-func HasSections() predicate.Part {
+// HasSection applies the HasEdge predicate on the "section" edge.
+func HasSection() predicate.Part {
 	return predicate.Part(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, SectionsTable, SectionsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, false, SectionTable, SectionColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasSectionsWith applies the HasEdge predicate on the "sections" edge with a given conditions (other predicates).
-func HasSectionsWith(preds ...predicate.Section) predicate.Part {
+// HasSectionWith applies the HasEdge predicate on the "section" edge with a given conditions (other predicates).
+func HasSectionWith(preds ...predicate.Section) predicate.Part {
 	return predicate.Part(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(SectionsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, SectionsTable, SectionsPrimaryKey...),
+			sqlgraph.To(SectionInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, SectionTable, SectionColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

@@ -11,35 +11,35 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/hook"
 )
 
-// Position holds the schema definition for the Position entity.
-type Position struct {
+// Warehouse holds the schema definition for the Warehouse entity.
+type Warehouse struct {
 	ent.Schema
 }
 
-// Fields of the Position.
-func (Position) Fields() []ent.Field {
+// Fields of the Warehouse.
+func (Warehouse) Fields() []ent.Field {
 	return []ent.Field{
 		field.Time("createdAt").Default(time.Now),
 		field.Time("updatedAt").Default(time.Now),
-		field.Int("positionId").Positive().Unique(),
+		field.String("name").NotEmpty().Unique(),
+		field.String("description"),
 	}
 }
 
-// Edges of the Position.
-func (Position) Edges() []ent.Edge {
+// Edges of the Warehouse.
+func (Warehouse) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("storedBox", Box.Type).Ref("position").Unique(),
-		edge.From("warehouse", Warehouse.Type).Ref("positions").Unique(),
+		edge.To("positions", Position.Type),
 	}
 }
 
-// Hooks of the Position.
-func (Position) Hooks() []ent.Hook {
+// Hooks of the Warehouse.
+func (Warehouse) Hooks() []ent.Hook {
 	return []ent.Hook{
 		// update updatedAt
 		hook.On(
 			func(next ent.Mutator) ent.Mutator {
-				return hook.PositionFunc(func(ctx context.Context, m *gen.PositionMutation) (ent.Value, error) {
+				return hook.WarehouseFunc(func(ctx context.Context, m *gen.WarehouseMutation) (ent.Value, error) {
 					m.SetUpdatedAt(time.Now())
 					return next.Mutate(ctx, m)
 				})

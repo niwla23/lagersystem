@@ -4,6 +4,8 @@ package position
 
 import (
 	"time"
+
+	"entgo.io/ent"
 )
 
 const (
@@ -13,10 +15,14 @@ const (
 	FieldID = "id"
 	// FieldCreatedAt holds the string denoting the createdat field in the database.
 	FieldCreatedAt = "created_at"
+	// FieldUpdatedAt holds the string denoting the updatedat field in the database.
+	FieldUpdatedAt = "updated_at"
 	// FieldPositionId holds the string denoting the positionid field in the database.
 	FieldPositionId = "position_id"
 	// EdgeStoredBox holds the string denoting the storedbox edge name in mutations.
 	EdgeStoredBox = "storedBox"
+	// EdgeWarehouse holds the string denoting the warehouse edge name in mutations.
+	EdgeWarehouse = "warehouse"
 	// Table holds the table name of the position in the database.
 	Table = "positions"
 	// StoredBoxTable is the table that holds the storedBox relation/edge.
@@ -26,12 +32,20 @@ const (
 	StoredBoxInverseTable = "boxes"
 	// StoredBoxColumn is the table column denoting the storedBox relation/edge.
 	StoredBoxColumn = "box_position"
+	// WarehouseTable is the table that holds the warehouse relation/edge.
+	WarehouseTable = "positions"
+	// WarehouseInverseTable is the table name for the Warehouse entity.
+	// It exists in this package in order to avoid circular dependency with the "warehouse" package.
+	WarehouseInverseTable = "warehouses"
+	// WarehouseColumn is the table column denoting the warehouse relation/edge.
+	WarehouseColumn = "warehouse_positions"
 )
 
 // Columns holds all SQL columns for position fields.
 var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
+	FieldUpdatedAt,
 	FieldPositionId,
 }
 
@@ -39,6 +53,7 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"box_position",
+	"warehouse_positions",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -56,9 +71,17 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+// Note that the variables below are initialized by the runtime
+// package on the initialization of the application. Therefore,
+// it should be imported in the main as follows:
+//
+//	import _ "github.com/niwla23/lagersystem/manager/ent/runtime"
 var (
+	Hooks [1]ent.Hook
 	// DefaultCreatedAt holds the default value on creation for the "createdAt" field.
 	DefaultCreatedAt func() time.Time
+	// DefaultUpdatedAt holds the default value on creation for the "updatedAt" field.
+	DefaultUpdatedAt func() time.Time
 	// PositionIdValidator is a validator for the "positionId" field. It is called by the builders before save.
 	PositionIdValidator func(int) error
 )

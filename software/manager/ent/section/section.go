@@ -4,6 +4,8 @@ package section
 
 import (
 	"time"
+
+	"entgo.io/ent"
 )
 
 const (
@@ -13,6 +15,8 @@ const (
 	FieldID = "id"
 	// FieldCreatedAt holds the string denoting the createdat field in the database.
 	FieldCreatedAt = "created_at"
+	// FieldUpdatedAt holds the string denoting the updatedat field in the database.
+	FieldUpdatedAt = "updated_at"
 	// EdgeBox holds the string denoting the box edge name in mutations.
 	EdgeBox = "box"
 	// EdgeParts holds the string denoting the parts edge name in mutations.
@@ -26,17 +30,20 @@ const (
 	BoxInverseTable = "boxes"
 	// BoxColumn is the table column denoting the box relation/edge.
 	BoxColumn = "box_sections"
-	// PartsTable is the table that holds the parts relation/edge. The primary key declared below.
-	PartsTable = "part_sections"
+	// PartsTable is the table that holds the parts relation/edge.
+	PartsTable = "parts"
 	// PartsInverseTable is the table name for the Part entity.
 	// It exists in this package in order to avoid circular dependency with the "part" package.
 	PartsInverseTable = "parts"
+	// PartsColumn is the table column denoting the parts relation/edge.
+	PartsColumn = "part_section"
 )
 
 // Columns holds all SQL columns for section fields.
 var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
+	FieldUpdatedAt,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "sections"
@@ -44,12 +51,6 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"box_sections",
 }
-
-var (
-	// PartsPrimaryKey and PartsColumn2 are the table columns denoting the
-	// primary key for the parts relation (M2M).
-	PartsPrimaryKey = []string{"part_id", "section_id"}
-)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -66,7 +67,15 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+// Note that the variables below are initialized by the runtime
+// package on the initialization of the application. Therefore,
+// it should be imported in the main as follows:
+//
+//	import _ "github.com/niwla23/lagersystem/manager/ent/runtime"
 var (
+	Hooks [1]ent.Hook
 	// DefaultCreatedAt holds the default value on creation for the "createdAt" field.
 	DefaultCreatedAt func() time.Time
+	// DefaultUpdatedAt holds the default value on creation for the "updatedAt" field.
+	DefaultUpdatedAt func() time.Time
 )

@@ -16,8 +16,8 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/position"
 	"github.com/niwla23/lagersystem/manager/ent/property"
 	"github.com/niwla23/lagersystem/manager/ent/section"
-	"github.com/niwla23/lagersystem/manager/ent/system"
 	"github.com/niwla23/lagersystem/manager/ent/tag"
+	"github.com/niwla23/lagersystem/manager/ent/warehouse"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -45,13 +45,13 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		box.Table:      box.ValidColumn,
-		part.Table:     part.ValidColumn,
-		position.Table: position.ValidColumn,
-		property.Table: property.ValidColumn,
-		section.Table:  section.ValidColumn,
-		system.Table:   system.ValidColumn,
-		tag.Table:      tag.ValidColumn,
+		box.Table:       box.ValidColumn,
+		part.Table:      part.ValidColumn,
+		position.Table:  position.ValidColumn,
+		property.Table:  property.ValidColumn,
+		section.Table:   section.ValidColumn,
+		tag.Table:       tag.ValidColumn,
+		warehouse.Table: warehouse.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

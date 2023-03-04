@@ -35,6 +35,20 @@ func (pc *PropertyCreate) SetNillableCreatedAt(t *time.Time) *PropertyCreate {
 	return pc
 }
 
+// SetUpdatedAt sets the "updatedAt" field.
+func (pc *PropertyCreate) SetUpdatedAt(t time.Time) *PropertyCreate {
+	pc.mutation.SetUpdatedAt(t)
+	return pc
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (pc *PropertyCreate) SetNillableUpdatedAt(t *time.Time) *PropertyCreate {
+	if t != nil {
+		pc.SetUpdatedAt(*t)
+	}
+	return pc
+}
+
 // SetName sets the "name" field.
 func (pc *PropertyCreate) SetName(s string) *PropertyCreate {
 	pc.mutation.SetName(s)
@@ -79,7 +93,9 @@ func (pc *PropertyCreate) Mutation() *PropertyMutation {
 
 // Save creates the Property in the database.
 func (pc *PropertyCreate) Save(ctx context.Context) (*Property, error) {
-	pc.defaults()
+	if err := pc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks[*Property, PropertyMutation](ctx, pc.sqlSave, pc.mutation, pc.hooks)
 }
 
@@ -106,17 +122,31 @@ func (pc *PropertyCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (pc *PropertyCreate) defaults() {
+func (pc *PropertyCreate) defaults() error {
 	if _, ok := pc.mutation.CreatedAt(); !ok {
+		if property.DefaultCreatedAt == nil {
+			return fmt.Errorf("ent: uninitialized property.DefaultCreatedAt (forgotten import ent/runtime?)")
+		}
 		v := property.DefaultCreatedAt()
 		pc.mutation.SetCreatedAt(v)
 	}
+	if _, ok := pc.mutation.UpdatedAt(); !ok {
+		if property.DefaultUpdatedAt == nil {
+			return fmt.Errorf("ent: uninitialized property.DefaultUpdatedAt (forgotten import ent/runtime?)")
+		}
+		v := property.DefaultUpdatedAt()
+		pc.mutation.SetUpdatedAt(v)
+	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (pc *PropertyCreate) check() error {
 	if _, ok := pc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Property.createdAt"`)}
+	}
+	if _, ok := pc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updatedAt", err: errors.New(`ent: missing required field "Property.updatedAt"`)}
 	}
 	if _, ok := pc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Property.name"`)}
@@ -177,6 +207,10 @@ func (pc *PropertyCreate) createSpec() (*Property, *sqlgraph.CreateSpec) {
 	if value, ok := pc.mutation.CreatedAt(); ok {
 		_spec.SetField(property.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
+	}
+	if value, ok := pc.mutation.UpdatedAt(); ok {
+		_spec.SetField(property.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
 	}
 	if value, ok := pc.mutation.Name(); ok {
 		_spec.SetField(property.FieldName, field.TypeString, value)

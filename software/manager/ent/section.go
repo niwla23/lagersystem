@@ -19,6 +19,8 @@ type Section struct {
 	ID int `json:"id,omitempty"`
 	// CreatedAt holds the value of the "createdAt" field.
 	CreatedAt time.Time `json:"createdAt,omitempty"`
+	// UpdatedAt holds the value of the "updatedAt" field.
+	UpdatedAt time.Time `json:"updatedAt,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SectionQuery when eager-loading is set.
 	Edges        SectionEdges `json:"edges"`
@@ -65,7 +67,7 @@ func (*Section) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case section.FieldID:
 			values[i] = new(sql.NullInt64)
-		case section.FieldCreatedAt:
+		case section.FieldCreatedAt, section.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case section.ForeignKeys[0]: // box_sections
 			values[i] = new(sql.NullInt64)
@@ -95,6 +97,12 @@ func (s *Section) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
 			} else if value.Valid {
 				s.CreatedAt = value.Time
+			}
+		case section.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updatedAt", values[i])
+			} else if value.Valid {
+				s.UpdatedAt = value.Time
 			}
 		case section.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -143,6 +151,9 @@ func (s *Section) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", s.ID))
 	builder.WriteString("createdAt=")
 	builder.WriteString(s.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("updatedAt=")
+	builder.WriteString(s.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -43,6 +43,20 @@ func (tu *TagUpdate) SetNillableCreatedAt(t *time.Time) *TagUpdate {
 	return tu
 }
 
+// SetUpdatedAt sets the "updatedAt" field.
+func (tu *TagUpdate) SetUpdatedAt(t time.Time) *TagUpdate {
+	tu.mutation.SetUpdatedAt(t)
+	return tu
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (tu *TagUpdate) SetNillableUpdatedAt(t *time.Time) *TagUpdate {
+	if t != nil {
+		tu.SetUpdatedAt(*t)
+	}
+	return tu
+}
+
 // SetName sets the "name" field.
 func (tu *TagUpdate) SetName(s string) *TagUpdate {
 	tu.mutation.SetName(s)
@@ -217,6 +231,9 @@ func (tu *TagUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := tu.mutation.CreatedAt(); ok {
 		_spec.SetField(tag.FieldCreatedAt, field.TypeTime, value)
+	}
+	if value, ok := tu.mutation.UpdatedAt(); ok {
+		_spec.SetField(tag.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := tu.mutation.Name(); ok {
 		_spec.SetField(tag.FieldName, field.TypeString, value)
@@ -397,6 +414,20 @@ func (tuo *TagUpdateOne) SetCreatedAt(t time.Time) *TagUpdateOne {
 func (tuo *TagUpdateOne) SetNillableCreatedAt(t *time.Time) *TagUpdateOne {
 	if t != nil {
 		tuo.SetCreatedAt(*t)
+	}
+	return tuo
+}
+
+// SetUpdatedAt sets the "updatedAt" field.
+func (tuo *TagUpdateOne) SetUpdatedAt(t time.Time) *TagUpdateOne {
+	tuo.mutation.SetUpdatedAt(t)
+	return tuo
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (tuo *TagUpdateOne) SetNillableUpdatedAt(t *time.Time) *TagUpdateOne {
+	if t != nil {
+		tuo.SetUpdatedAt(*t)
 	}
 	return tuo
 }
@@ -599,6 +630,9 @@ func (tuo *TagUpdateOne) sqlSave(ctx context.Context) (_node *Tag, err error) {
 	}
 	if value, ok := tuo.mutation.CreatedAt(); ok {
 		_spec.SetField(tag.FieldCreatedAt, field.TypeTime, value)
+	}
+	if value, ok := tuo.mutation.UpdatedAt(); ok {
+		_spec.SetField(tag.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := tuo.mutation.Name(); ok {
 		_spec.SetField(tag.FieldName, field.TypeString, value)

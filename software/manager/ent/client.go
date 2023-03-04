@@ -15,8 +15,8 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/position"
 	"github.com/niwla23/lagersystem/manager/ent/property"
 	"github.com/niwla23/lagersystem/manager/ent/section"
-	"github.com/niwla23/lagersystem/manager/ent/system"
 	"github.com/niwla23/lagersystem/manager/ent/tag"
+	"github.com/niwla23/lagersystem/manager/ent/warehouse"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
@@ -38,10 +38,10 @@ type Client struct {
 	Property *PropertyClient
 	// Section is the client for interacting with the Section builders.
 	Section *SectionClient
-	// System is the client for interacting with the System builders.
-	System *SystemClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
+	// Warehouse is the client for interacting with the Warehouse builders.
+	Warehouse *WarehouseClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -60,8 +60,8 @@ func (c *Client) init() {
 	c.Position = NewPositionClient(c.config)
 	c.Property = NewPropertyClient(c.config)
 	c.Section = NewSectionClient(c.config)
-	c.System = NewSystemClient(c.config)
 	c.Tag = NewTagClient(c.config)
+	c.Warehouse = NewWarehouseClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -93,15 +93,15 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:      ctx,
-		config:   cfg,
-		Box:      NewBoxClient(cfg),
-		Part:     NewPartClient(cfg),
-		Position: NewPositionClient(cfg),
-		Property: NewPropertyClient(cfg),
-		Section:  NewSectionClient(cfg),
-		System:   NewSystemClient(cfg),
-		Tag:      NewTagClient(cfg),
+		ctx:       ctx,
+		config:    cfg,
+		Box:       NewBoxClient(cfg),
+		Part:      NewPartClient(cfg),
+		Position:  NewPositionClient(cfg),
+		Property:  NewPropertyClient(cfg),
+		Section:   NewSectionClient(cfg),
+		Tag:       NewTagClient(cfg),
+		Warehouse: NewWarehouseClient(cfg),
 	}, nil
 }
 
@@ -119,15 +119,15 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:      ctx,
-		config:   cfg,
-		Box:      NewBoxClient(cfg),
-		Part:     NewPartClient(cfg),
-		Position: NewPositionClient(cfg),
-		Property: NewPropertyClient(cfg),
-		Section:  NewSectionClient(cfg),
-		System:   NewSystemClient(cfg),
-		Tag:      NewTagClient(cfg),
+		ctx:       ctx,
+		config:    cfg,
+		Box:       NewBoxClient(cfg),
+		Part:      NewPartClient(cfg),
+		Position:  NewPositionClient(cfg),
+		Property:  NewPropertyClient(cfg),
+		Section:   NewSectionClient(cfg),
+		Tag:       NewTagClient(cfg),
+		Warehouse: NewWarehouseClient(cfg),
 	}, nil
 }
 
@@ -161,8 +161,8 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Position.Use(hooks...)
 	c.Property.Use(hooks...)
 	c.Section.Use(hooks...)
-	c.System.Use(hooks...)
 	c.Tag.Use(hooks...)
+	c.Warehouse.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
@@ -173,8 +173,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Position.Intercept(interceptors...)
 	c.Property.Intercept(interceptors...)
 	c.Section.Intercept(interceptors...)
-	c.System.Intercept(interceptors...)
 	c.Tag.Intercept(interceptors...)
+	c.Warehouse.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -190,10 +190,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Property.mutate(ctx, m)
 	case *SectionMutation:
 		return c.Section.mutate(ctx, m)
-	case *SystemMutation:
-		return c.System.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
+	case *WarehouseMutation:
+		return c.Warehouse.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -324,25 +324,10 @@ func (c *BoxClient) QueryPosition(b *Box) *PositionQuery {
 	return query
 }
 
-// QuerySystem queries the system edge of a Box.
-func (c *BoxClient) QuerySystem(b *Box) *SystemQuery {
-	query := (&SystemClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := b.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(box.Table, box.FieldID, id),
-			sqlgraph.To(system.Table, system.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, box.SystemTable, box.SystemColumn),
-		)
-		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // Hooks returns the client hooks.
 func (c *BoxClient) Hooks() []Hook {
-	return c.hooks.Box
+	hooks := c.hooks.Box
+	return append(hooks[:len(hooks):len(hooks)], box.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -490,15 +475,15 @@ func (c *PartClient) QueryProperties(pa *Part) *PropertyQuery {
 	return query
 }
 
-// QuerySections queries the sections edge of a Part.
-func (c *PartClient) QuerySections(pa *Part) *SectionQuery {
+// QuerySection queries the section edge of a Part.
+func (c *PartClient) QuerySection(pa *Part) *SectionQuery {
 	query := (&SectionClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := pa.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(part.Table, part.FieldID, id),
 			sqlgraph.To(section.Table, section.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, part.SectionsTable, part.SectionsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, false, part.SectionTable, part.SectionColumn),
 		)
 		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
 		return fromV, nil
@@ -508,7 +493,8 @@ func (c *PartClient) QuerySections(pa *Part) *SectionQuery {
 
 // Hooks returns the client hooks.
 func (c *PartClient) Hooks() []Hook {
-	return c.hooks.Part
+	hooks := c.hooks.Part
+	return append(hooks[:len(hooks):len(hooks)], part.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -640,9 +626,26 @@ func (c *PositionClient) QueryStoredBox(po *Position) *BoxQuery {
 	return query
 }
 
+// QueryWarehouse queries the warehouse edge of a Position.
+func (c *PositionClient) QueryWarehouse(po *Position) *WarehouseQuery {
+	query := (&WarehouseClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := po.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(position.Table, position.FieldID, id),
+			sqlgraph.To(warehouse.Table, warehouse.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, position.WarehouseTable, position.WarehouseColumn),
+		)
+		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *PositionClient) Hooks() []Hook {
-	return c.hooks.Position
+	hooks := c.hooks.Position
+	return append(hooks[:len(hooks):len(hooks)], position.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -776,7 +779,8 @@ func (c *PropertyClient) QueryPart(pr *Property) *PartQuery {
 
 // Hooks returns the client hooks.
 func (c *PropertyClient) Hooks() []Hook {
-	return c.hooks.Property
+	hooks := c.hooks.Property
+	return append(hooks[:len(hooks):len(hooks)], property.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -916,7 +920,7 @@ func (c *SectionClient) QueryParts(s *Section) *PartQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(section.Table, section.FieldID, id),
 			sqlgraph.To(part.Table, part.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, section.PartsTable, section.PartsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, true, section.PartsTable, section.PartsColumn),
 		)
 		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
 		return fromV, nil
@@ -926,7 +930,8 @@ func (c *SectionClient) QueryParts(s *Section) *PartQuery {
 
 // Hooks returns the client hooks.
 func (c *SectionClient) Hooks() []Hook {
-	return c.hooks.Section
+	hooks := c.hooks.Section
+	return append(hooks[:len(hooks):len(hooks)], section.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -946,140 +951,6 @@ func (c *SectionClient) mutate(ctx context.Context, m *SectionMutation) (Value, 
 		return (&SectionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Section mutation op: %q", m.Op())
-	}
-}
-
-// SystemClient is a client for the System schema.
-type SystemClient struct {
-	config
-}
-
-// NewSystemClient returns a client for the System from the given config.
-func NewSystemClient(c config) *SystemClient {
-	return &SystemClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `system.Hooks(f(g(h())))`.
-func (c *SystemClient) Use(hooks ...Hook) {
-	c.hooks.System = append(c.hooks.System, hooks...)
-}
-
-// Use adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `system.Intercept(f(g(h())))`.
-func (c *SystemClient) Intercept(interceptors ...Interceptor) {
-	c.inters.System = append(c.inters.System, interceptors...)
-}
-
-// Create returns a builder for creating a System entity.
-func (c *SystemClient) Create() *SystemCreate {
-	mutation := newSystemMutation(c.config, OpCreate)
-	return &SystemCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of System entities.
-func (c *SystemClient) CreateBulk(builders ...*SystemCreate) *SystemCreateBulk {
-	return &SystemCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for System.
-func (c *SystemClient) Update() *SystemUpdate {
-	mutation := newSystemMutation(c.config, OpUpdate)
-	return &SystemUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *SystemClient) UpdateOne(s *System) *SystemUpdateOne {
-	mutation := newSystemMutation(c.config, OpUpdateOne, withSystem(s))
-	return &SystemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *SystemClient) UpdateOneID(id int) *SystemUpdateOne {
-	mutation := newSystemMutation(c.config, OpUpdateOne, withSystemID(id))
-	return &SystemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for System.
-func (c *SystemClient) Delete() *SystemDelete {
-	mutation := newSystemMutation(c.config, OpDelete)
-	return &SystemDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *SystemClient) DeleteOne(s *System) *SystemDeleteOne {
-	return c.DeleteOneID(s.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *SystemClient) DeleteOneID(id int) *SystemDeleteOne {
-	builder := c.Delete().Where(system.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &SystemDeleteOne{builder}
-}
-
-// Query returns a query builder for System.
-func (c *SystemClient) Query() *SystemQuery {
-	return &SystemQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeSystem},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a System entity by its id.
-func (c *SystemClient) Get(ctx context.Context, id int) (*System, error) {
-	return c.Query().Where(system.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *SystemClient) GetX(ctx context.Context, id int) *System {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryBoxes queries the boxes edge of a System.
-func (c *SystemClient) QueryBoxes(s *System) *BoxQuery {
-	query := (&BoxClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := s.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(system.Table, system.FieldID, id),
-			sqlgraph.To(box.Table, box.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, system.BoxesTable, system.BoxesColumn),
-		)
-		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *SystemClient) Hooks() []Hook {
-	return c.hooks.System
-}
-
-// Interceptors returns the client interceptors.
-func (c *SystemClient) Interceptors() []Interceptor {
-	return c.inters.System
-}
-
-func (c *SystemClient) mutate(ctx context.Context, m *SystemMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&SystemCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&SystemUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&SystemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&SystemDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown System mutation op: %q", m.Op())
 	}
 }
 
@@ -1226,7 +1097,8 @@ func (c *TagClient) QueryChildren(t *Tag) *TagQuery {
 
 // Hooks returns the client hooks.
 func (c *TagClient) Hooks() []Hook {
-	return c.hooks.Tag
+	hooks := c.hooks.Tag
+	return append(hooks[:len(hooks):len(hooks)], tag.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -1246,5 +1118,140 @@ func (c *TagClient) mutate(ctx context.Context, m *TagMutation) (Value, error) {
 		return (&TagDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Tag mutation op: %q", m.Op())
+	}
+}
+
+// WarehouseClient is a client for the Warehouse schema.
+type WarehouseClient struct {
+	config
+}
+
+// NewWarehouseClient returns a client for the Warehouse from the given config.
+func NewWarehouseClient(c config) *WarehouseClient {
+	return &WarehouseClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `warehouse.Hooks(f(g(h())))`.
+func (c *WarehouseClient) Use(hooks ...Hook) {
+	c.hooks.Warehouse = append(c.hooks.Warehouse, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `warehouse.Intercept(f(g(h())))`.
+func (c *WarehouseClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Warehouse = append(c.inters.Warehouse, interceptors...)
+}
+
+// Create returns a builder for creating a Warehouse entity.
+func (c *WarehouseClient) Create() *WarehouseCreate {
+	mutation := newWarehouseMutation(c.config, OpCreate)
+	return &WarehouseCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Warehouse entities.
+func (c *WarehouseClient) CreateBulk(builders ...*WarehouseCreate) *WarehouseCreateBulk {
+	return &WarehouseCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Warehouse.
+func (c *WarehouseClient) Update() *WarehouseUpdate {
+	mutation := newWarehouseMutation(c.config, OpUpdate)
+	return &WarehouseUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *WarehouseClient) UpdateOne(w *Warehouse) *WarehouseUpdateOne {
+	mutation := newWarehouseMutation(c.config, OpUpdateOne, withWarehouse(w))
+	return &WarehouseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *WarehouseClient) UpdateOneID(id int) *WarehouseUpdateOne {
+	mutation := newWarehouseMutation(c.config, OpUpdateOne, withWarehouseID(id))
+	return &WarehouseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Warehouse.
+func (c *WarehouseClient) Delete() *WarehouseDelete {
+	mutation := newWarehouseMutation(c.config, OpDelete)
+	return &WarehouseDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *WarehouseClient) DeleteOne(w *Warehouse) *WarehouseDeleteOne {
+	return c.DeleteOneID(w.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *WarehouseClient) DeleteOneID(id int) *WarehouseDeleteOne {
+	builder := c.Delete().Where(warehouse.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &WarehouseDeleteOne{builder}
+}
+
+// Query returns a query builder for Warehouse.
+func (c *WarehouseClient) Query() *WarehouseQuery {
+	return &WarehouseQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeWarehouse},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Warehouse entity by its id.
+func (c *WarehouseClient) Get(ctx context.Context, id int) (*Warehouse, error) {
+	return c.Query().Where(warehouse.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *WarehouseClient) GetX(ctx context.Context, id int) *Warehouse {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPositions queries the positions edge of a Warehouse.
+func (c *WarehouseClient) QueryPositions(w *Warehouse) *PositionQuery {
+	query := (&PositionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := w.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(warehouse.Table, warehouse.FieldID, id),
+			sqlgraph.To(position.Table, position.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, warehouse.PositionsTable, warehouse.PositionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(w.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *WarehouseClient) Hooks() []Hook {
+	hooks := c.hooks.Warehouse
+	return append(hooks[:len(hooks):len(hooks)], warehouse.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *WarehouseClient) Interceptors() []Interceptor {
+	return c.inters.Warehouse
+}
+
+func (c *WarehouseClient) mutate(ctx context.Context, m *WarehouseMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&WarehouseCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&WarehouseUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&WarehouseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&WarehouseDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Warehouse mutation op: %q", m.Op())
 	}
 }

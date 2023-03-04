@@ -4,6 +4,8 @@ package part
 
 import (
 	"time"
+
+	"entgo.io/ent"
 )
 
 const (
@@ -13,6 +15,10 @@ const (
 	FieldID = "id"
 	// FieldCreatedAt holds the string denoting the createdat field in the database.
 	FieldCreatedAt = "created_at"
+	// FieldUpdatedAt holds the string denoting the updatedat field in the database.
+	FieldUpdatedAt = "updated_at"
+	// FieldDeleted holds the string denoting the deleted field in the database.
+	FieldDeleted = "deleted"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldDescription holds the string denoting the description field in the database.
@@ -21,8 +27,8 @@ const (
 	EdgeTags = "tags"
 	// EdgeProperties holds the string denoting the properties edge name in mutations.
 	EdgeProperties = "properties"
-	// EdgeSections holds the string denoting the sections edge name in mutations.
-	EdgeSections = "sections"
+	// EdgeSection holds the string denoting the section edge name in mutations.
+	EdgeSection = "section"
 	// Table holds the table name of the part in the database.
 	Table = "parts"
 	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
@@ -37,28 +43,35 @@ const (
 	PropertiesInverseTable = "properties"
 	// PropertiesColumn is the table column denoting the properties relation/edge.
 	PropertiesColumn = "part_properties"
-	// SectionsTable is the table that holds the sections relation/edge. The primary key declared below.
-	SectionsTable = "part_sections"
-	// SectionsInverseTable is the table name for the Section entity.
+	// SectionTable is the table that holds the section relation/edge.
+	SectionTable = "parts"
+	// SectionInverseTable is the table name for the Section entity.
 	// It exists in this package in order to avoid circular dependency with the "section" package.
-	SectionsInverseTable = "sections"
+	SectionInverseTable = "sections"
+	// SectionColumn is the table column denoting the section relation/edge.
+	SectionColumn = "part_section"
 )
 
 // Columns holds all SQL columns for part fields.
 var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
+	FieldUpdatedAt,
+	FieldDeleted,
 	FieldName,
 	FieldDescription,
+}
+
+// ForeignKeys holds the SQL foreign-keys that are owned by the "parts"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"part_section",
 }
 
 var (
 	// TagsPrimaryKey and TagsColumn2 are the table columns denoting the
 	// primary key for the tags relation (M2M).
 	TagsPrimaryKey = []string{"part_id", "tag_id"}
-	// SectionsPrimaryKey and SectionsColumn2 are the table columns denoting the
-	// primary key for the sections relation (M2M).
-	SectionsPrimaryKey = []string{"part_id", "section_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -68,12 +81,27 @@ func ValidColumn(column string) bool {
 			return true
 		}
 	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
+			return true
+		}
+	}
 	return false
 }
 
+// Note that the variables below are initialized by the runtime
+// package on the initialization of the application. Therefore,
+// it should be imported in the main as follows:
+//
+//	import _ "github.com/niwla23/lagersystem/manager/ent/runtime"
 var (
+	Hooks [1]ent.Hook
 	// DefaultCreatedAt holds the default value on creation for the "createdAt" field.
 	DefaultCreatedAt func() time.Time
+	// DefaultUpdatedAt holds the default value on creation for the "updatedAt" field.
+	DefaultUpdatedAt func() time.Time
+	// DefaultDeleted holds the default value on creation for the "deleted" field.
+	DefaultDeleted bool
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 )

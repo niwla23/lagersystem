@@ -27,7 +27,8 @@ type PartQuery struct {
 	predicates     []predicate.Part
 	withTags       *TagQuery
 	withProperties *PropertyQuery
-	withSections   *SectionQuery
+	withSection    *SectionQuery
+	withFKs        bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -108,8 +109,8 @@ func (pq *PartQuery) QueryProperties() *PropertyQuery {
 	return query
 }
 
-// QuerySections chains the current query on the "sections" edge.
-func (pq *PartQuery) QuerySections() *SectionQuery {
+// QuerySection chains the current query on the "section" edge.
+func (pq *PartQuery) QuerySection() *SectionQuery {
 	query := (&SectionClient{config: pq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pq.prepareQuery(ctx); err != nil {
@@ -122,7 +123,7 @@ func (pq *PartQuery) QuerySections() *SectionQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(part.Table, part.FieldID, selector),
 			sqlgraph.To(section.Table, section.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, part.SectionsTable, part.SectionsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, false, part.SectionTable, part.SectionColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -322,7 +323,7 @@ func (pq *PartQuery) Clone() *PartQuery {
 		predicates:     append([]predicate.Part{}, pq.predicates...),
 		withTags:       pq.withTags.Clone(),
 		withProperties: pq.withProperties.Clone(),
-		withSections:   pq.withSections.Clone(),
+		withSection:    pq.withSection.Clone(),
 		// clone intermediate query.
 		sql:  pq.sql.Clone(),
 		path: pq.path,
@@ -351,14 +352,14 @@ func (pq *PartQuery) WithProperties(opts ...func(*PropertyQuery)) *PartQuery {
 	return pq
 }
 
-// WithSections tells the query-builder to eager-load the nodes that are connected to
-// the "sections" edge. The optional arguments are used to configure the query builder of the edge.
-func (pq *PartQuery) WithSections(opts ...func(*SectionQuery)) *PartQuery {
+// WithSection tells the query-builder to eager-load the nodes that are connected to
+// the "section" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *PartQuery) WithSection(opts ...func(*SectionQuery)) *PartQuery {
 	query := (&SectionClient{config: pq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	pq.withSections = query
+	pq.withSection = query
 	return pq
 }
 
@@ -439,13 +440,20 @@ func (pq *PartQuery) prepareQuery(ctx context.Context) error {
 func (pq *PartQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Part, error) {
 	var (
 		nodes       = []*Part{}
+		withFKs     = pq.withFKs
 		_spec       = pq.querySpec()
 		loadedTypes = [3]bool{
 			pq.withTags != nil,
 			pq.withProperties != nil,
-			pq.withSections != nil,
+			pq.withSection != nil,
 		}
 	)
+	if pq.withSection != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, part.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Part).scanValues(nil, columns)
 	}
@@ -478,10 +486,9 @@ func (pq *PartQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Part, e
 			return nil, err
 		}
 	}
-	if query := pq.withSections; query != nil {
-		if err := pq.loadSections(ctx, query, nodes,
-			func(n *Part) { n.Edges.Sections = []*Section{} },
-			func(n *Part, e *Section) { n.Edges.Sections = append(n.Edges.Sections, e) }); err != nil {
+	if query := pq.withSection; query != nil {
+		if err := pq.loadSection(ctx, query, nodes, nil,
+			func(n *Part, e *Section) { n.Edges.Section = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -580,63 +587,34 @@ func (pq *PartQuery) loadProperties(ctx context.Context, query *PropertyQuery, n
 	}
 	return nil
 }
-func (pq *PartQuery) loadSections(ctx context.Context, query *SectionQuery, nodes []*Part, init func(*Part), assign func(*Part, *Section)) error {
-	edgeIDs := make([]driver.Value, len(nodes))
-	byID := make(map[int]*Part)
-	nids := make(map[int]map[*Part]struct{})
-	for i, node := range nodes {
-		edgeIDs[i] = node.ID
-		byID[node.ID] = node
-		if init != nil {
-			init(node)
+func (pq *PartQuery) loadSection(ctx context.Context, query *SectionQuery, nodes []*Part, init func(*Part), assign func(*Part, *Section)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Part)
+	for i := range nodes {
+		if nodes[i].part_section == nil {
+			continue
 		}
+		fk := *nodes[i].part_section
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(part.SectionsTable)
-		s.Join(joinT).On(s.C(section.FieldID), joinT.C(part.SectionsPrimaryKey[1]))
-		s.Where(sql.InValues(joinT.C(part.SectionsPrimaryKey[0]), edgeIDs...))
-		columns := s.SelectedColumns()
-		s.Select(joinT.C(part.SectionsPrimaryKey[0]))
-		s.AppendSelect(columns...)
-		s.SetDistinct(false)
-	})
-	if err := query.prepareQuery(ctx); err != nil {
-		return err
+	if len(ids) == 0 {
+		return nil
 	}
-	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
-		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
-			assign := spec.Assign
-			values := spec.ScanValues
-			spec.ScanValues = func(columns []string) ([]any, error) {
-				values, err := values(columns[1:])
-				if err != nil {
-					return nil, err
-				}
-				return append([]any{new(sql.NullInt64)}, values...), nil
-			}
-			spec.Assign = func(columns []string, values []any) error {
-				outValue := int(values[0].(*sql.NullInt64).Int64)
-				inValue := int(values[1].(*sql.NullInt64).Int64)
-				if nids[inValue] == nil {
-					nids[inValue] = map[*Part]struct{}{byID[outValue]: {}}
-					return assign(columns[1:], values[1:])
-				}
-				nids[inValue][byID[outValue]] = struct{}{}
-				return nil
-			}
-		})
-	})
-	neighbors, err := withInterceptors[[]*Section](ctx, query, qr, query.inters)
+	query.Where(section.IDIn(ids...))
+	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		nodes, ok := nids[n.ID]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected "sections" node returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "part_section" returned %v`, n.ID)
 		}
-		for kn := range nodes {
-			assign(kn, n)
+		for i := range nodes {
+			assign(nodes[i], n)
 		}
 	}
 	return nil

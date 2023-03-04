@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/niwla23/lagersystem/manager/ent/box"
 	"github.com/niwla23/lagersystem/manager/ent/position"
+	"github.com/niwla23/lagersystem/manager/ent/warehouse"
 )
 
 // PositionCreate is the builder for creating a Position entity.
@@ -31,6 +32,20 @@ func (pc *PositionCreate) SetCreatedAt(t time.Time) *PositionCreate {
 func (pc *PositionCreate) SetNillableCreatedAt(t *time.Time) *PositionCreate {
 	if t != nil {
 		pc.SetCreatedAt(*t)
+	}
+	return pc
+}
+
+// SetUpdatedAt sets the "updatedAt" field.
+func (pc *PositionCreate) SetUpdatedAt(t time.Time) *PositionCreate {
+	pc.mutation.SetUpdatedAt(t)
+	return pc
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (pc *PositionCreate) SetNillableUpdatedAt(t *time.Time) *PositionCreate {
+	if t != nil {
+		pc.SetUpdatedAt(*t)
 	}
 	return pc
 }
@@ -60,6 +75,25 @@ func (pc *PositionCreate) SetStoredBox(b *Box) *PositionCreate {
 	return pc.SetStoredBoxID(b.ID)
 }
 
+// SetWarehouseID sets the "warehouse" edge to the Warehouse entity by ID.
+func (pc *PositionCreate) SetWarehouseID(id int) *PositionCreate {
+	pc.mutation.SetWarehouseID(id)
+	return pc
+}
+
+// SetNillableWarehouseID sets the "warehouse" edge to the Warehouse entity by ID if the given value is not nil.
+func (pc *PositionCreate) SetNillableWarehouseID(id *int) *PositionCreate {
+	if id != nil {
+		pc = pc.SetWarehouseID(*id)
+	}
+	return pc
+}
+
+// SetWarehouse sets the "warehouse" edge to the Warehouse entity.
+func (pc *PositionCreate) SetWarehouse(w *Warehouse) *PositionCreate {
+	return pc.SetWarehouseID(w.ID)
+}
+
 // Mutation returns the PositionMutation object of the builder.
 func (pc *PositionCreate) Mutation() *PositionMutation {
 	return pc.mutation
@@ -67,7 +101,9 @@ func (pc *PositionCreate) Mutation() *PositionMutation {
 
 // Save creates the Position in the database.
 func (pc *PositionCreate) Save(ctx context.Context) (*Position, error) {
-	pc.defaults()
+	if err := pc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks[*Position, PositionMutation](ctx, pc.sqlSave, pc.mutation, pc.hooks)
 }
 
@@ -94,17 +130,31 @@ func (pc *PositionCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (pc *PositionCreate) defaults() {
+func (pc *PositionCreate) defaults() error {
 	if _, ok := pc.mutation.CreatedAt(); !ok {
+		if position.DefaultCreatedAt == nil {
+			return fmt.Errorf("ent: uninitialized position.DefaultCreatedAt (forgotten import ent/runtime?)")
+		}
 		v := position.DefaultCreatedAt()
 		pc.mutation.SetCreatedAt(v)
 	}
+	if _, ok := pc.mutation.UpdatedAt(); !ok {
+		if position.DefaultUpdatedAt == nil {
+			return fmt.Errorf("ent: uninitialized position.DefaultUpdatedAt (forgotten import ent/runtime?)")
+		}
+		v := position.DefaultUpdatedAt()
+		pc.mutation.SetUpdatedAt(v)
+	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (pc *PositionCreate) check() error {
 	if _, ok := pc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Position.createdAt"`)}
+	}
+	if _, ok := pc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updatedAt", err: errors.New(`ent: missing required field "Position.updatedAt"`)}
 	}
 	if _, ok := pc.mutation.PositionId(); !ok {
 		return &ValidationError{Name: "positionId", err: errors.New(`ent: missing required field "Position.positionId"`)}
@@ -150,6 +200,10 @@ func (pc *PositionCreate) createSpec() (*Position, *sqlgraph.CreateSpec) {
 		_spec.SetField(position.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
+	if value, ok := pc.mutation.UpdatedAt(); ok {
+		_spec.SetField(position.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
+	}
 	if value, ok := pc.mutation.PositionId(); ok {
 		_spec.SetField(position.FieldPositionId, field.TypeInt, value)
 		_node.PositionId = value
@@ -172,6 +226,26 @@ func (pc *PositionCreate) createSpec() (*Position, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.box_position = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.WarehouseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   position.WarehouseTable,
+			Columns: []string{position.WarehouseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: warehouse.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.warehouse_positions = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

@@ -60,6 +60,11 @@ func CreatedAt(v time.Time) predicate.Position {
 	return predicate.Position(sql.FieldEQ(FieldCreatedAt, v))
 }
 
+// UpdatedAt applies equality check predicate on the "updatedAt" field. It's identical to UpdatedAtEQ.
+func UpdatedAt(v time.Time) predicate.Position {
+	return predicate.Position(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
 // PositionId applies equality check predicate on the "positionId" field. It's identical to PositionIdEQ.
 func PositionId(v int) predicate.Position {
 	return predicate.Position(sql.FieldEQ(FieldPositionId, v))
@@ -103,6 +108,46 @@ func CreatedAtLT(v time.Time) predicate.Position {
 // CreatedAtLTE applies the LTE predicate on the "createdAt" field.
 func CreatedAtLTE(v time.Time) predicate.Position {
 	return predicate.Position(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// UpdatedAtEQ applies the EQ predicate on the "updatedAt" field.
+func UpdatedAtEQ(v time.Time) predicate.Position {
+	return predicate.Position(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtNEQ applies the NEQ predicate on the "updatedAt" field.
+func UpdatedAtNEQ(v time.Time) predicate.Position {
+	return predicate.Position(sql.FieldNEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtIn applies the In predicate on the "updatedAt" field.
+func UpdatedAtIn(vs ...time.Time) predicate.Position {
+	return predicate.Position(sql.FieldIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtNotIn applies the NotIn predicate on the "updatedAt" field.
+func UpdatedAtNotIn(vs ...time.Time) predicate.Position {
+	return predicate.Position(sql.FieldNotIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtGT applies the GT predicate on the "updatedAt" field.
+func UpdatedAtGT(v time.Time) predicate.Position {
+	return predicate.Position(sql.FieldGT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtGTE applies the GTE predicate on the "updatedAt" field.
+func UpdatedAtGTE(v time.Time) predicate.Position {
+	return predicate.Position(sql.FieldGTE(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLT applies the LT predicate on the "updatedAt" field.
+func UpdatedAtLT(v time.Time) predicate.Position {
+	return predicate.Position(sql.FieldLT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLTE applies the LTE predicate on the "updatedAt" field.
+func UpdatedAtLTE(v time.Time) predicate.Position {
+	return predicate.Position(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
 // PositionIdEQ applies the EQ predicate on the "positionId" field.
@@ -163,6 +208,33 @@ func HasStoredBoxWith(preds ...predicate.Box) predicate.Position {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(StoredBoxInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, true, StoredBoxTable, StoredBoxColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasWarehouse applies the HasEdge predicate on the "warehouse" edge.
+func HasWarehouse() predicate.Position {
+	return predicate.Position(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, WarehouseTable, WarehouseColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasWarehouseWith applies the HasEdge predicate on the "warehouse" edge with a given conditions (other predicates).
+func HasWarehouseWith(preds ...predicate.Warehouse) predicate.Position {
+	return predicate.Position(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(WarehouseInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, WarehouseTable, WarehouseColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

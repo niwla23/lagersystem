@@ -14,6 +14,7 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/box"
 	"github.com/niwla23/lagersystem/manager/ent/position"
 	"github.com/niwla23/lagersystem/manager/ent/predicate"
+	"github.com/niwla23/lagersystem/manager/ent/warehouse"
 )
 
 // PositionUpdate is the builder for updating Position entities.
@@ -39,6 +40,20 @@ func (pu *PositionUpdate) SetCreatedAt(t time.Time) *PositionUpdate {
 func (pu *PositionUpdate) SetNillableCreatedAt(t *time.Time) *PositionUpdate {
 	if t != nil {
 		pu.SetCreatedAt(*t)
+	}
+	return pu
+}
+
+// SetUpdatedAt sets the "updatedAt" field.
+func (pu *PositionUpdate) SetUpdatedAt(t time.Time) *PositionUpdate {
+	pu.mutation.SetUpdatedAt(t)
+	return pu
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (pu *PositionUpdate) SetNillableUpdatedAt(t *time.Time) *PositionUpdate {
+	if t != nil {
+		pu.SetUpdatedAt(*t)
 	}
 	return pu
 }
@@ -75,6 +90,25 @@ func (pu *PositionUpdate) SetStoredBox(b *Box) *PositionUpdate {
 	return pu.SetStoredBoxID(b.ID)
 }
 
+// SetWarehouseID sets the "warehouse" edge to the Warehouse entity by ID.
+func (pu *PositionUpdate) SetWarehouseID(id int) *PositionUpdate {
+	pu.mutation.SetWarehouseID(id)
+	return pu
+}
+
+// SetNillableWarehouseID sets the "warehouse" edge to the Warehouse entity by ID if the given value is not nil.
+func (pu *PositionUpdate) SetNillableWarehouseID(id *int) *PositionUpdate {
+	if id != nil {
+		pu = pu.SetWarehouseID(*id)
+	}
+	return pu
+}
+
+// SetWarehouse sets the "warehouse" edge to the Warehouse entity.
+func (pu *PositionUpdate) SetWarehouse(w *Warehouse) *PositionUpdate {
+	return pu.SetWarehouseID(w.ID)
+}
+
 // Mutation returns the PositionMutation object of the builder.
 func (pu *PositionUpdate) Mutation() *PositionMutation {
 	return pu.mutation
@@ -83,6 +117,12 @@ func (pu *PositionUpdate) Mutation() *PositionMutation {
 // ClearStoredBox clears the "storedBox" edge to the Box entity.
 func (pu *PositionUpdate) ClearStoredBox() *PositionUpdate {
 	pu.mutation.ClearStoredBox()
+	return pu
+}
+
+// ClearWarehouse clears the "warehouse" edge to the Warehouse entity.
+func (pu *PositionUpdate) ClearWarehouse() *PositionUpdate {
+	pu.mutation.ClearWarehouse()
 	return pu
 }
 
@@ -147,6 +187,9 @@ func (pu *PositionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := pu.mutation.CreatedAt(); ok {
 		_spec.SetField(position.FieldCreatedAt, field.TypeTime, value)
 	}
+	if value, ok := pu.mutation.UpdatedAt(); ok {
+		_spec.SetField(position.FieldUpdatedAt, field.TypeTime, value)
+	}
 	if value, ok := pu.mutation.PositionId(); ok {
 		_spec.SetField(position.FieldPositionId, field.TypeInt, value)
 	}
@@ -180,6 +223,41 @@ func (pu *PositionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: box.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if pu.mutation.WarehouseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   position.WarehouseTable,
+			Columns: []string{position.WarehouseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: warehouse.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.WarehouseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   position.WarehouseTable,
+			Columns: []string{position.WarehouseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: warehouse.FieldID,
 				},
 			},
 		}
@@ -222,6 +300,20 @@ func (puo *PositionUpdateOne) SetNillableCreatedAt(t *time.Time) *PositionUpdate
 	return puo
 }
 
+// SetUpdatedAt sets the "updatedAt" field.
+func (puo *PositionUpdateOne) SetUpdatedAt(t time.Time) *PositionUpdateOne {
+	puo.mutation.SetUpdatedAt(t)
+	return puo
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (puo *PositionUpdateOne) SetNillableUpdatedAt(t *time.Time) *PositionUpdateOne {
+	if t != nil {
+		puo.SetUpdatedAt(*t)
+	}
+	return puo
+}
+
 // SetPositionId sets the "positionId" field.
 func (puo *PositionUpdateOne) SetPositionId(i int) *PositionUpdateOne {
 	puo.mutation.ResetPositionId()
@@ -254,6 +346,25 @@ func (puo *PositionUpdateOne) SetStoredBox(b *Box) *PositionUpdateOne {
 	return puo.SetStoredBoxID(b.ID)
 }
 
+// SetWarehouseID sets the "warehouse" edge to the Warehouse entity by ID.
+func (puo *PositionUpdateOne) SetWarehouseID(id int) *PositionUpdateOne {
+	puo.mutation.SetWarehouseID(id)
+	return puo
+}
+
+// SetNillableWarehouseID sets the "warehouse" edge to the Warehouse entity by ID if the given value is not nil.
+func (puo *PositionUpdateOne) SetNillableWarehouseID(id *int) *PositionUpdateOne {
+	if id != nil {
+		puo = puo.SetWarehouseID(*id)
+	}
+	return puo
+}
+
+// SetWarehouse sets the "warehouse" edge to the Warehouse entity.
+func (puo *PositionUpdateOne) SetWarehouse(w *Warehouse) *PositionUpdateOne {
+	return puo.SetWarehouseID(w.ID)
+}
+
 // Mutation returns the PositionMutation object of the builder.
 func (puo *PositionUpdateOne) Mutation() *PositionMutation {
 	return puo.mutation
@@ -262,6 +373,12 @@ func (puo *PositionUpdateOne) Mutation() *PositionMutation {
 // ClearStoredBox clears the "storedBox" edge to the Box entity.
 func (puo *PositionUpdateOne) ClearStoredBox() *PositionUpdateOne {
 	puo.mutation.ClearStoredBox()
+	return puo
+}
+
+// ClearWarehouse clears the "warehouse" edge to the Warehouse entity.
+func (puo *PositionUpdateOne) ClearWarehouse() *PositionUpdateOne {
+	puo.mutation.ClearWarehouse()
 	return puo
 }
 
@@ -350,6 +467,9 @@ func (puo *PositionUpdateOne) sqlSave(ctx context.Context) (_node *Position, err
 	if value, ok := puo.mutation.CreatedAt(); ok {
 		_spec.SetField(position.FieldCreatedAt, field.TypeTime, value)
 	}
+	if value, ok := puo.mutation.UpdatedAt(); ok {
+		_spec.SetField(position.FieldUpdatedAt, field.TypeTime, value)
+	}
 	if value, ok := puo.mutation.PositionId(); ok {
 		_spec.SetField(position.FieldPositionId, field.TypeInt, value)
 	}
@@ -383,6 +503,41 @@ func (puo *PositionUpdateOne) sqlSave(ctx context.Context) (_node *Position, err
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: box.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.WarehouseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   position.WarehouseTable,
+			Columns: []string{position.WarehouseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: warehouse.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.WarehouseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   position.WarehouseTable,
+			Columns: []string{position.WarehouseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: warehouse.FieldID,
 				},
 			},
 		}

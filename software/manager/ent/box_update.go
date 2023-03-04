@@ -11,11 +11,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/box"
 	"github.com/niwla23/lagersystem/manager/ent/position"
 	"github.com/niwla23/lagersystem/manager/ent/predicate"
 	"github.com/niwla23/lagersystem/manager/ent/section"
-	"github.com/niwla23/lagersystem/manager/ent/system"
 )
 
 // BoxUpdate is the builder for updating Box entities.
@@ -42,6 +42,26 @@ func (bu *BoxUpdate) SetNillableCreatedAt(t *time.Time) *BoxUpdate {
 	if t != nil {
 		bu.SetCreatedAt(*t)
 	}
+	return bu
+}
+
+// SetUpdatedAt sets the "updatedAt" field.
+func (bu *BoxUpdate) SetUpdatedAt(t time.Time) *BoxUpdate {
+	bu.mutation.SetUpdatedAt(t)
+	return bu
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (bu *BoxUpdate) SetNillableUpdatedAt(t *time.Time) *BoxUpdate {
+	if t != nil {
+		bu.SetUpdatedAt(*t)
+	}
+	return bu
+}
+
+// SetBoxId sets the "boxId" field.
+func (bu *BoxUpdate) SetBoxId(u uuid.UUID) *BoxUpdate {
+	bu.mutation.SetBoxId(u)
 	return bu
 }
 
@@ -79,25 +99,6 @@ func (bu *BoxUpdate) SetPosition(p *Position) *BoxUpdate {
 	return bu.SetPositionID(p.ID)
 }
 
-// SetSystemID sets the "system" edge to the System entity by ID.
-func (bu *BoxUpdate) SetSystemID(id int) *BoxUpdate {
-	bu.mutation.SetSystemID(id)
-	return bu
-}
-
-// SetNillableSystemID sets the "system" edge to the System entity by ID if the given value is not nil.
-func (bu *BoxUpdate) SetNillableSystemID(id *int) *BoxUpdate {
-	if id != nil {
-		bu = bu.SetSystemID(*id)
-	}
-	return bu
-}
-
-// SetSystem sets the "system" edge to the System entity.
-func (bu *BoxUpdate) SetSystem(s *System) *BoxUpdate {
-	return bu.SetSystemID(s.ID)
-}
-
 // Mutation returns the BoxMutation object of the builder.
 func (bu *BoxUpdate) Mutation() *BoxMutation {
 	return bu.mutation
@@ -127,12 +128,6 @@ func (bu *BoxUpdate) RemoveSections(s ...*Section) *BoxUpdate {
 // ClearPosition clears the "position" edge to the Position entity.
 func (bu *BoxUpdate) ClearPosition() *BoxUpdate {
 	bu.mutation.ClearPosition()
-	return bu
-}
-
-// ClearSystem clears the "system" edge to the System entity.
-func (bu *BoxUpdate) ClearSystem() *BoxUpdate {
-	bu.mutation.ClearSystem()
 	return bu
 }
 
@@ -183,6 +178,12 @@ func (bu *BoxUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := bu.mutation.CreatedAt(); ok {
 		_spec.SetField(box.FieldCreatedAt, field.TypeTime, value)
+	}
+	if value, ok := bu.mutation.UpdatedAt(); ok {
+		_spec.SetField(box.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := bu.mutation.BoxId(); ok {
+		_spec.SetField(box.FieldBoxId, field.TypeUUID, value)
 	}
 	if bu.mutation.SectionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -273,41 +274,6 @@ func (bu *BoxUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if bu.mutation.SystemCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   box.SystemTable,
-			Columns: []string{box.SystemColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: system.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := bu.mutation.SystemIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   box.SystemTable,
-			Columns: []string{box.SystemColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: system.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if n, err = sqlgraph.UpdateNodes(ctx, bu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{box.Label}
@@ -339,6 +305,26 @@ func (buo *BoxUpdateOne) SetNillableCreatedAt(t *time.Time) *BoxUpdateOne {
 	if t != nil {
 		buo.SetCreatedAt(*t)
 	}
+	return buo
+}
+
+// SetUpdatedAt sets the "updatedAt" field.
+func (buo *BoxUpdateOne) SetUpdatedAt(t time.Time) *BoxUpdateOne {
+	buo.mutation.SetUpdatedAt(t)
+	return buo
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (buo *BoxUpdateOne) SetNillableUpdatedAt(t *time.Time) *BoxUpdateOne {
+	if t != nil {
+		buo.SetUpdatedAt(*t)
+	}
+	return buo
+}
+
+// SetBoxId sets the "boxId" field.
+func (buo *BoxUpdateOne) SetBoxId(u uuid.UUID) *BoxUpdateOne {
+	buo.mutation.SetBoxId(u)
 	return buo
 }
 
@@ -376,25 +362,6 @@ func (buo *BoxUpdateOne) SetPosition(p *Position) *BoxUpdateOne {
 	return buo.SetPositionID(p.ID)
 }
 
-// SetSystemID sets the "system" edge to the System entity by ID.
-func (buo *BoxUpdateOne) SetSystemID(id int) *BoxUpdateOne {
-	buo.mutation.SetSystemID(id)
-	return buo
-}
-
-// SetNillableSystemID sets the "system" edge to the System entity by ID if the given value is not nil.
-func (buo *BoxUpdateOne) SetNillableSystemID(id *int) *BoxUpdateOne {
-	if id != nil {
-		buo = buo.SetSystemID(*id)
-	}
-	return buo
-}
-
-// SetSystem sets the "system" edge to the System entity.
-func (buo *BoxUpdateOne) SetSystem(s *System) *BoxUpdateOne {
-	return buo.SetSystemID(s.ID)
-}
-
 // Mutation returns the BoxMutation object of the builder.
 func (buo *BoxUpdateOne) Mutation() *BoxMutation {
 	return buo.mutation
@@ -424,12 +391,6 @@ func (buo *BoxUpdateOne) RemoveSections(s ...*Section) *BoxUpdateOne {
 // ClearPosition clears the "position" edge to the Position entity.
 func (buo *BoxUpdateOne) ClearPosition() *BoxUpdateOne {
 	buo.mutation.ClearPosition()
-	return buo
-}
-
-// ClearSystem clears the "system" edge to the System entity.
-func (buo *BoxUpdateOne) ClearSystem() *BoxUpdateOne {
-	buo.mutation.ClearSystem()
 	return buo
 }
 
@@ -504,6 +465,12 @@ func (buo *BoxUpdateOne) sqlSave(ctx context.Context) (_node *Box, err error) {
 	}
 	if value, ok := buo.mutation.CreatedAt(); ok {
 		_spec.SetField(box.FieldCreatedAt, field.TypeTime, value)
+	}
+	if value, ok := buo.mutation.UpdatedAt(); ok {
+		_spec.SetField(box.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := buo.mutation.BoxId(); ok {
+		_spec.SetField(box.FieldBoxId, field.TypeUUID, value)
 	}
 	if buo.mutation.SectionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -586,41 +553,6 @@ func (buo *BoxUpdateOne) sqlSave(ctx context.Context) (_node *Box, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: position.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if buo.mutation.SystemCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   box.SystemTable,
-			Columns: []string{box.SystemColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: system.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := buo.mutation.SystemIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   box.SystemTable,
-			Columns: []string{box.SystemColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: system.FieldID,
 				},
 			},
 		}

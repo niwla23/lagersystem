@@ -37,6 +37,34 @@ func (pc *PartCreate) SetNillableCreatedAt(t *time.Time) *PartCreate {
 	return pc
 }
 
+// SetUpdatedAt sets the "updatedAt" field.
+func (pc *PartCreate) SetUpdatedAt(t time.Time) *PartCreate {
+	pc.mutation.SetUpdatedAt(t)
+	return pc
+}
+
+// SetNillableUpdatedAt sets the "updatedAt" field if the given value is not nil.
+func (pc *PartCreate) SetNillableUpdatedAt(t *time.Time) *PartCreate {
+	if t != nil {
+		pc.SetUpdatedAt(*t)
+	}
+	return pc
+}
+
+// SetDeleted sets the "deleted" field.
+func (pc *PartCreate) SetDeleted(b bool) *PartCreate {
+	pc.mutation.SetDeleted(b)
+	return pc
+}
+
+// SetNillableDeleted sets the "deleted" field if the given value is not nil.
+func (pc *PartCreate) SetNillableDeleted(b *bool) *PartCreate {
+	if b != nil {
+		pc.SetDeleted(*b)
+	}
+	return pc
+}
+
 // SetName sets the "name" field.
 func (pc *PartCreate) SetName(s string) *PartCreate {
 	pc.mutation.SetName(s)
@@ -79,19 +107,23 @@ func (pc *PartCreate) AddProperties(p ...*Property) *PartCreate {
 	return pc.AddPropertyIDs(ids...)
 }
 
-// AddSectionIDs adds the "sections" edge to the Section entity by IDs.
-func (pc *PartCreate) AddSectionIDs(ids ...int) *PartCreate {
-	pc.mutation.AddSectionIDs(ids...)
+// SetSectionID sets the "section" edge to the Section entity by ID.
+func (pc *PartCreate) SetSectionID(id int) *PartCreate {
+	pc.mutation.SetSectionID(id)
 	return pc
 }
 
-// AddSections adds the "sections" edges to the Section entity.
-func (pc *PartCreate) AddSections(s ...*Section) *PartCreate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// SetNillableSectionID sets the "section" edge to the Section entity by ID if the given value is not nil.
+func (pc *PartCreate) SetNillableSectionID(id *int) *PartCreate {
+	if id != nil {
+		pc = pc.SetSectionID(*id)
 	}
-	return pc.AddSectionIDs(ids...)
+	return pc
+}
+
+// SetSection sets the "section" edge to the Section entity.
+func (pc *PartCreate) SetSection(s *Section) *PartCreate {
+	return pc.SetSectionID(s.ID)
 }
 
 // Mutation returns the PartMutation object of the builder.
@@ -101,7 +133,9 @@ func (pc *PartCreate) Mutation() *PartMutation {
 
 // Save creates the Part in the database.
 func (pc *PartCreate) Save(ctx context.Context) (*Part, error) {
-	pc.defaults()
+	if err := pc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks[*Part, PartMutation](ctx, pc.sqlSave, pc.mutation, pc.hooks)
 }
 
@@ -128,17 +162,38 @@ func (pc *PartCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (pc *PartCreate) defaults() {
+func (pc *PartCreate) defaults() error {
 	if _, ok := pc.mutation.CreatedAt(); !ok {
+		if part.DefaultCreatedAt == nil {
+			return fmt.Errorf("ent: uninitialized part.DefaultCreatedAt (forgotten import ent/runtime?)")
+		}
 		v := part.DefaultCreatedAt()
 		pc.mutation.SetCreatedAt(v)
 	}
+	if _, ok := pc.mutation.UpdatedAt(); !ok {
+		if part.DefaultUpdatedAt == nil {
+			return fmt.Errorf("ent: uninitialized part.DefaultUpdatedAt (forgotten import ent/runtime?)")
+		}
+		v := part.DefaultUpdatedAt()
+		pc.mutation.SetUpdatedAt(v)
+	}
+	if _, ok := pc.mutation.Deleted(); !ok {
+		v := part.DefaultDeleted
+		pc.mutation.SetDeleted(v)
+	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (pc *PartCreate) check() error {
 	if _, ok := pc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "Part.createdAt"`)}
+	}
+	if _, ok := pc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updatedAt", err: errors.New(`ent: missing required field "Part.updatedAt"`)}
+	}
+	if _, ok := pc.mutation.Deleted(); !ok {
+		return &ValidationError{Name: "deleted", err: errors.New(`ent: missing required field "Part.deleted"`)}
 	}
 	if _, ok := pc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Part.name"`)}
@@ -187,6 +242,14 @@ func (pc *PartCreate) createSpec() (*Part, *sqlgraph.CreateSpec) {
 		_spec.SetField(part.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
+	if value, ok := pc.mutation.UpdatedAt(); ok {
+		_spec.SetField(part.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
+	}
+	if value, ok := pc.mutation.Deleted(); ok {
+		_spec.SetField(part.FieldDeleted, field.TypeBool, value)
+		_node.Deleted = value
+	}
 	if value, ok := pc.mutation.Name(); ok {
 		_spec.SetField(part.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -233,12 +296,12 @@ func (pc *PartCreate) createSpec() (*Part, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := pc.mutation.SectionsIDs(); len(nodes) > 0 {
+	if nodes := pc.mutation.SectionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   part.SectionsTable,
-			Columns: part.SectionsPrimaryKey,
+			Table:   part.SectionTable,
+			Columns: []string{part.SectionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -250,6 +313,7 @@ func (pc *PartCreate) createSpec() (*Part, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.part_section = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
