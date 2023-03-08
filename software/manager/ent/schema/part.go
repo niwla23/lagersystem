@@ -24,6 +24,8 @@ func (Part) Fields() []ent.Field {
 		field.Bool("deleted").Default(false),
 		field.String("name").NotEmpty().Unique(),
 		field.String("description"),
+		// set struct tag so it won't omit 0 values
+		field.Int("amount").Default(-1).StructTag(`json:"amount"`).Comment("-1 means amount is unknown"),
 	}
 }
 

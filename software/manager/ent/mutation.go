@@ -638,6 +638,8 @@ type PartMutation struct {
 	deleted           *bool
 	name              *string
 	description       *string
+	amount            *int
+	addamount         *int
 	clearedFields     map[string]struct{}
 	tags              map[int]struct{}
 	removedtags       map[int]struct{}
@@ -930,6 +932,62 @@ func (m *PartMutation) ResetDescription() {
 	m.description = nil
 }
 
+// SetAmount sets the "amount" field.
+func (m *PartMutation) SetAmount(i int) {
+	m.amount = &i
+	m.addamount = nil
+}
+
+// Amount returns the value of the "amount" field in the mutation.
+func (m *PartMutation) Amount() (r int, exists bool) {
+	v := m.amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAmount returns the old "amount" field's value of the Part entity.
+// If the Part object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PartMutation) OldAmount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAmount: %w", err)
+	}
+	return oldValue.Amount, nil
+}
+
+// AddAmount adds i to the "amount" field.
+func (m *PartMutation) AddAmount(i int) {
+	if m.addamount != nil {
+		*m.addamount += i
+	} else {
+		m.addamount = &i
+	}
+}
+
+// AddedAmount returns the value that was added to the "amount" field in this mutation.
+func (m *PartMutation) AddedAmount() (r int, exists bool) {
+	v := m.addamount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAmount resets all changes to the "amount" field.
+func (m *PartMutation) ResetAmount() {
+	m.amount = nil
+	m.addamount = nil
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by ids.
 func (m *PartMutation) AddTagIDs(ids ...int) {
 	if m.tags == nil {
@@ -1111,7 +1169,7 @@ func (m *PartMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PartMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.createdAt != nil {
 		fields = append(fields, part.FieldCreatedAt)
 	}
@@ -1126,6 +1184,9 @@ func (m *PartMutation) Fields() []string {
 	}
 	if m.description != nil {
 		fields = append(fields, part.FieldDescription)
+	}
+	if m.amount != nil {
+		fields = append(fields, part.FieldAmount)
 	}
 	return fields
 }
@@ -1145,6 +1206,8 @@ func (m *PartMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case part.FieldDescription:
 		return m.Description()
+	case part.FieldAmount:
+		return m.Amount()
 	}
 	return nil, false
 }
@@ -1164,6 +1227,8 @@ func (m *PartMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldName(ctx)
 	case part.FieldDescription:
 		return m.OldDescription(ctx)
+	case part.FieldAmount:
+		return m.OldAmount(ctx)
 	}
 	return nil, fmt.Errorf("unknown Part field %s", name)
 }
@@ -1208,6 +1273,13 @@ func (m *PartMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDescription(v)
 		return nil
+	case part.FieldAmount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAmount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Part field %s", name)
 }
@@ -1215,13 +1287,21 @@ func (m *PartMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *PartMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addamount != nil {
+		fields = append(fields, part.FieldAmount)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *PartMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case part.FieldAmount:
+		return m.AddedAmount()
+	}
 	return nil, false
 }
 
@@ -1230,6 +1310,13 @@ func (m *PartMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *PartMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case part.FieldAmount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAmount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Part numeric field %s", name)
 }
@@ -1271,6 +1358,9 @@ func (m *PartMutation) ResetField(name string) error {
 		return nil
 	case part.FieldDescription:
 		m.ResetDescription()
+		return nil
+	case part.FieldAmount:
+		m.ResetAmount()
 		return nil
 	}
 	return fmt.Errorf("unknown Part field %s", name)

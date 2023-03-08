@@ -23,6 +23,8 @@ const (
 	FieldName = "name"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
+	// FieldAmount holds the string denoting the amount field in the database.
+	FieldAmount = "amount"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
 	// EdgeProperties holds the string denoting the properties edge name in mutations.
@@ -60,6 +62,7 @@ var Columns = []string{
 	FieldDeleted,
 	FieldName,
 	FieldDescription,
+	FieldAmount,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "parts"
@@ -104,4 +107,6 @@ var (
 	DefaultDeleted bool
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// DefaultAmount holds the default value on creation for the "amount" field.
+	DefaultAmount int
 )

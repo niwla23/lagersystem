@@ -2,45 +2,24 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/etag"
+	"github.com/gofiber/fiber/v2/middleware/favicon"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
 	_ "github.com/mattn/go-sqlite3"
 	_ "github.com/niwla23/lagersystem/manager/ent/runtime"
 	"github.com/niwla23/lagersystem/manager/typesense_wrapper"
 	"github.com/typesense/typesense-go/typesense/api"
 
 	"github.com/niwla23/lagersystem/manager/ent"
+	"github.com/niwla23/lagersystem/manager/handlers"
 )
-
-// use this function to return a json status message.
-// to use it just return its error
-// DEPRECATED: just yeet the error directly, gofiber will take care of it
-func JsonStatusResponse(c *fiber.Ctx, code int, message string) error {
-	schema := struct {
-		Message   string    `json:"message"`
-		Code      int       `json:"code"`
-		Timestamp time.Time `json:"timestamp"`
-	}{}
-	schema.Message = message
-	schema.Code = code
-	schema.Timestamp = time.Now().UTC()
-
-	data, err := json.Marshal(schema)
-
-	if err != nil {
-		return fiber.NewError(500, "not sure what even works if we even fail to make an error lol")
-	}
-
-	c.Response().Header.Add("content-type", "application/json")
-	return c.Status(code).SendString(string(data))
-	// return fiber.NewError(code, string(data))
-}
 
 func main() {
 	// client, err := ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
@@ -119,17 +98,30 @@ func main() {
 				code = e.Code
 			}
 
-			return JsonStatusResponse(c, code, err.Error())
+			return c.Status(code).JSON(&fiber.Map{
+				"message":   err.Error(),
+				"code":      code,
+				"timestamp": time.Now().UTC(),
+			})
 		},
 	})
 
+	app.Use(requestid.New())
+	app.Use(favicon.New())
 	app.Use(recover.New(recover.Config{EnableStackTrace: true}))
+	app.Use(etag.New())
 
 	partHandlers := app.Group("/parts")
-	registerPartRoutes(partHandlers, client, ctx)
+	handlers.RegisterPartRoutes(partHandlers, client, ctx)
 
 	positionHandlers := app.Group("/positions")
-	registerPositionRoutes(positionHandlers, client, ctx)
+	handlers.RegisterPositionRoutes(positionHandlers, client, ctx)
+
+	boxHandlers := app.Group("/boxes")
+	handlers.RegisterBoxRoutes(boxHandlers, client, ctx)
+
+	storeHandlers := app.Group("/store")
+	handlers.RegisterStoreRoutes(storeHandlers, client, ctx)
 
 	app.Listen(":3001")
 }

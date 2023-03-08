@@ -80,6 +80,11 @@ func Description(v string) predicate.Part {
 	return predicate.Part(sql.FieldEQ(FieldDescription, v))
 }
 
+// Amount applies equality check predicate on the "amount" field. It's identical to AmountEQ.
+func Amount(v int) predicate.Part {
+	return predicate.Part(sql.FieldEQ(FieldAmount, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "createdAt" field.
 func CreatedAtEQ(v time.Time) predicate.Part {
 	return predicate.Part(sql.FieldEQ(FieldCreatedAt, v))
@@ -298,6 +303,46 @@ func DescriptionEqualFold(v string) predicate.Part {
 // DescriptionContainsFold applies the ContainsFold predicate on the "description" field.
 func DescriptionContainsFold(v string) predicate.Part {
 	return predicate.Part(sql.FieldContainsFold(FieldDescription, v))
+}
+
+// AmountEQ applies the EQ predicate on the "amount" field.
+func AmountEQ(v int) predicate.Part {
+	return predicate.Part(sql.FieldEQ(FieldAmount, v))
+}
+
+// AmountNEQ applies the NEQ predicate on the "amount" field.
+func AmountNEQ(v int) predicate.Part {
+	return predicate.Part(sql.FieldNEQ(FieldAmount, v))
+}
+
+// AmountIn applies the In predicate on the "amount" field.
+func AmountIn(vs ...int) predicate.Part {
+	return predicate.Part(sql.FieldIn(FieldAmount, vs...))
+}
+
+// AmountNotIn applies the NotIn predicate on the "amount" field.
+func AmountNotIn(vs ...int) predicate.Part {
+	return predicate.Part(sql.FieldNotIn(FieldAmount, vs...))
+}
+
+// AmountGT applies the GT predicate on the "amount" field.
+func AmountGT(v int) predicate.Part {
+	return predicate.Part(sql.FieldGT(FieldAmount, v))
+}
+
+// AmountGTE applies the GTE predicate on the "amount" field.
+func AmountGTE(v int) predicate.Part {
+	return predicate.Part(sql.FieldGTE(FieldAmount, v))
+}
+
+// AmountLT applies the LT predicate on the "amount" field.
+func AmountLT(v int) predicate.Part {
+	return predicate.Part(sql.FieldLT(FieldAmount, v))
+}
+
+// AmountLTE applies the LTE predicate on the "amount" field.
+func AmountLTE(v int) predicate.Part {
+	return predicate.Part(sql.FieldLTE(FieldAmount, v))
 }
 
 // HasTags applies the HasEdge predicate on the "tags" edge.

@@ -85,6 +85,27 @@ func (pu *PartUpdate) SetDescription(s string) *PartUpdate {
 	return pu
 }
 
+// SetAmount sets the "amount" field.
+func (pu *PartUpdate) SetAmount(i int) *PartUpdate {
+	pu.mutation.ResetAmount()
+	pu.mutation.SetAmount(i)
+	return pu
+}
+
+// SetNillableAmount sets the "amount" field if the given value is not nil.
+func (pu *PartUpdate) SetNillableAmount(i *int) *PartUpdate {
+	if i != nil {
+		pu.SetAmount(*i)
+	}
+	return pu
+}
+
+// AddAmount adds i to the "amount" field.
+func (pu *PartUpdate) AddAmount(i int) *PartUpdate {
+	pu.mutation.AddAmount(i)
+	return pu
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (pu *PartUpdate) AddTagIDs(ids ...int) *PartUpdate {
 	pu.mutation.AddTagIDs(ids...)
@@ -259,6 +280,12 @@ func (pu *PartUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := pu.mutation.Description(); ok {
 		_spec.SetField(part.FieldDescription, field.TypeString, value)
+	}
+	if value, ok := pu.mutation.Amount(); ok {
+		_spec.SetField(part.FieldAmount, field.TypeInt, value)
+	}
+	if value, ok := pu.mutation.AddedAmount(); ok {
+		_spec.AddField(part.FieldAmount, field.TypeInt, value)
 	}
 	if pu.mutation.TagsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -477,6 +504,27 @@ func (puo *PartUpdateOne) SetDescription(s string) *PartUpdateOne {
 	return puo
 }
 
+// SetAmount sets the "amount" field.
+func (puo *PartUpdateOne) SetAmount(i int) *PartUpdateOne {
+	puo.mutation.ResetAmount()
+	puo.mutation.SetAmount(i)
+	return puo
+}
+
+// SetNillableAmount sets the "amount" field if the given value is not nil.
+func (puo *PartUpdateOne) SetNillableAmount(i *int) *PartUpdateOne {
+	if i != nil {
+		puo.SetAmount(*i)
+	}
+	return puo
+}
+
+// AddAmount adds i to the "amount" field.
+func (puo *PartUpdateOne) AddAmount(i int) *PartUpdateOne {
+	puo.mutation.AddAmount(i)
+	return puo
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (puo *PartUpdateOne) AddTagIDs(ids ...int) *PartUpdateOne {
 	puo.mutation.AddTagIDs(ids...)
@@ -675,6 +723,12 @@ func (puo *PartUpdateOne) sqlSave(ctx context.Context) (_node *Part, err error) 
 	}
 	if value, ok := puo.mutation.Description(); ok {
 		_spec.SetField(part.FieldDescription, field.TypeString, value)
+	}
+	if value, ok := puo.mutation.Amount(); ok {
+		_spec.SetField(part.FieldAmount, field.TypeInt, value)
+	}
+	if value, ok := puo.mutation.AddedAmount(); ok {
+		_spec.AddField(part.FieldAmount, field.TypeInt, value)
 	}
 	if puo.mutation.TagsCleared() {
 		edge := &sqlgraph.EdgeSpec{

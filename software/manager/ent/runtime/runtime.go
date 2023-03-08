@@ -51,6 +51,10 @@ func init() {
 	partDescName := partFields[3].Descriptor()
 	// part.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	part.NameValidator = partDescName.Validators[0].(func(string) error)
+	// partDescAmount is the schema descriptor for amount field.
+	partDescAmount := partFields[5].Descriptor()
+	// part.DefaultAmount holds the default value on creation for the amount field.
+	part.DefaultAmount = partDescAmount.Default.(int)
 	positionHooks := schema.Position{}.Hooks()
 	position.Hooks[0] = positionHooks[0]
 	positionFields := schema.Position{}.Fields()

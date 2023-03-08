@@ -77,6 +77,20 @@ func (pc *PartCreate) SetDescription(s string) *PartCreate {
 	return pc
 }
 
+// SetAmount sets the "amount" field.
+func (pc *PartCreate) SetAmount(i int) *PartCreate {
+	pc.mutation.SetAmount(i)
+	return pc
+}
+
+// SetNillableAmount sets the "amount" field if the given value is not nil.
+func (pc *PartCreate) SetNillableAmount(i *int) *PartCreate {
+	if i != nil {
+		pc.SetAmount(*i)
+	}
+	return pc
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (pc *PartCreate) AddTagIDs(ids ...int) *PartCreate {
 	pc.mutation.AddTagIDs(ids...)
@@ -181,6 +195,10 @@ func (pc *PartCreate) defaults() error {
 		v := part.DefaultDeleted
 		pc.mutation.SetDeleted(v)
 	}
+	if _, ok := pc.mutation.Amount(); !ok {
+		v := part.DefaultAmount
+		pc.mutation.SetAmount(v)
+	}
 	return nil
 }
 
@@ -205,6 +223,9 @@ func (pc *PartCreate) check() error {
 	}
 	if _, ok := pc.mutation.Description(); !ok {
 		return &ValidationError{Name: "description", err: errors.New(`ent: missing required field "Part.description"`)}
+	}
+	if _, ok := pc.mutation.Amount(); !ok {
+		return &ValidationError{Name: "amount", err: errors.New(`ent: missing required field "Part.amount"`)}
 	}
 	return nil
 }
@@ -257,6 +278,10 @@ func (pc *PartCreate) createSpec() (*Part, *sqlgraph.CreateSpec) {
 	if value, ok := pc.mutation.Description(); ok {
 		_spec.SetField(part.FieldDescription, field.TypeString, value)
 		_node.Description = value
+	}
+	if value, ok := pc.mutation.Amount(); ok {
+		_spec.SetField(part.FieldAmount, field.TypeInt, value)
+		_node.Amount = value
 	}
 	if nodes := pc.mutation.TagsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

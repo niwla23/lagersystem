@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -10,10 +10,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/niwla23/lagersystem/manager/ent"
 	"github.com/niwla23/lagersystem/manager/ent/part"
-	"github.com/niwla23/lagersystem/manager/ent/position"
 	"github.com/niwla23/lagersystem/manager/ent/property"
 	"github.com/niwla23/lagersystem/manager/ent/tag"
-	"github.com/niwla23/lagersystem/manager/ent/warehouse"
 )
 
 type PropertyAddData struct {
@@ -24,6 +22,7 @@ type PropertyAddData struct {
 type PartAddData struct {
 	Name        string                     `json:"name"`
 	Description string                     `json:"description"`
+	Amount      *int                       `json:"amount,omitempty"`
 	Tags        []string                   `json:"tags"`
 	Properties  map[string]PropertyAddData `json:"properties"`
 	BoxId       int                        `json:"boxId"`
@@ -41,7 +40,6 @@ func createOrGetTagsFromNameList(tagNames *[]string, client *ent.Client, ctx con
 			// fetch tag from db
 			target := &ent.ConstraintError{}
 			if errors.As(err, &target) {
-				fmt.Println(errors.Unwrap(err))
 				tagX, err = client.Tag.Query().Where(tag.Name(tagName)).Only(ctx)
 				if err != nil {
 					return nil, err
@@ -87,12 +85,18 @@ func createOrUpdatePropertiesFromMap(part *ent.Part, properties *map[string]Prop
 	return nil
 }
 
-func registerPartRoutes(router fiber.Router, client *ent.Client, ctx context.Context) {
+func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Context) {
 	router.Post("/", func(c *fiber.Ctx) error {
 		data := new(PartAddData)
 
 		if err := c.BodyParser(data); err != nil {
 			return err
+		}
+
+		// set default amount of -1 (unknown) unless the amount is given
+		amount := -1
+		if data.Amount != nil {
+			amount = *data.Amount
 		}
 
 		// get tags from db or create them
@@ -104,6 +108,7 @@ func registerPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		part, err := client.Part.Create().
 			SetName(data.Name).
 			SetDescription(data.Description).
+			SetAmount(amount).
 			AddTags(tags...).
 			Save(ctx)
 
@@ -117,7 +122,12 @@ func registerPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			return err
 		}
 
-		return c.SendString(part.Name)
+		// encode part to json
+		responseData, err := json.Marshal(part)
+		if err != nil {
+			return err
+		}
+		return c.SendString(string(responseData))
 	})
 
 	router.Put("/:partId<int>", func(c *fiber.Ctx) error {
@@ -127,6 +137,12 @@ func registerPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		data := new(PartAddData)
 		if err := c.BodyParser(data); err != nil {
 			return err
+		}
+
+		// set default amount of -1 (unknown) unless the amount is given
+		amount := -1
+		if data.Amount != nil {
+			amount = *data.Amount
 		}
 
 		// get part from db
@@ -151,6 +167,7 @@ func registerPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		part, err = part.Update().
 			SetName(data.Name).
 			SetDescription(data.Description).
+			SetAmount(amount).
 			ClearTags().
 			AddTags(tags...).
 			Save(ctx)
@@ -198,31 +215,32 @@ func registerPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		return c.SendString("in another universe we would ask operator service to deliver box at position: " + fmt.Sprint(position.ID))
 	})
 
-	router.Post("/:partId<int>/store", func(c *fiber.Ctx) error {
-		partId, _ := strconv.Atoi(c.Params("partId"))
+	// THIS IS PROBABLY COMPLETLY USELESS AS YOU WANT TO STORE THE BOX PLACED ON THE READER AND NOT THE PART
+	// router.Post("/:partId<int>/store", func(c *fiber.Ctx) error {
+	// 	partId, _ := strconv.Atoi(c.Params("partId"))
 
-		// get part from db
-		part, err := client.Part.Get(ctx, partId)
-		if err != nil {
-			return err
-		}
-		positionX, err := part.QuerySection().QueryBox().QueryPosition().Only(ctx)
+	// 	// get part from db
+	// 	part, err := client.Part.Get(ctx, partId)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	positionX, err := part.QuerySection().QueryBox().QueryPosition().Only(ctx)
 
-		target := &ent.NotFoundError{}
-		if errors.As(err, &target) {
-			// find free position
-			positionX, err = client.Position.Query().
-				Where(position.HasWarehouseWith(warehouse.ID(1))).
-				Where(position.Not(position.HasStoredBox())).
-				Only(ctx)
+	// 	target := &ent.NotFoundError{}
+	// 	if errors.As(err, &target) {
+	// 		// find free position
+	// 		positionX, err = client.Position.Query().
+	// 			Where(position.HasWarehouseWith(warehouse.ID(1))).
+	// 			Where(position.Not(position.HasStoredBox())).
+	// 			Only(ctx)
 
-			if err != nil {
-				return err
-			}
-		} else if err != nil {
-			return err
-		}
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 	} else if err != nil {
+	// 		return err
+	// 	}
 
-		return c.SendString("in another universe we would ask operator service to store part at loaction: " + fmt.Sprint(positionX.ID))
-	})
+	// 	return c.SendString("in another universe we would ask operator service to store part at loaction: " + fmt.Sprint(positionX.ID))
+	// })
 }

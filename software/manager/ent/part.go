@@ -27,6 +27,8 @@ type Part struct {
 	Name string `json:"name,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
+	// -1 means amount is unknown
+	Amount int `json:"amount"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PartQuery when eager-loading is set.
 	Edges        PartEdges `json:"edges"`
@@ -84,7 +86,7 @@ func (*Part) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case part.FieldDeleted:
 			values[i] = new(sql.NullBool)
-		case part.FieldID:
+		case part.FieldID, part.FieldAmount:
 			values[i] = new(sql.NullInt64)
 		case part.FieldName, part.FieldDescription:
 			values[i] = new(sql.NullString)
@@ -142,6 +144,12 @@ func (pa *Part) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
 				pa.Description = value.String
+			}
+		case part.FieldAmount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field amount", values[i])
+			} else if value.Valid {
+				pa.Amount = int(value.Int64)
 			}
 		case part.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -207,6 +215,9 @@ func (pa *Part) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("description=")
 	builder.WriteString(pa.Description)
+	builder.WriteString(", ")
+	builder.WriteString("amount=")
+	builder.WriteString(fmt.Sprintf("%v", pa.Amount))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -29,6 +29,7 @@ var (
 		{Name: "deleted", Type: field.TypeBool, Default: false},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "description", Type: field.TypeString},
+		{Name: "amount", Type: field.TypeInt, Default: -1},
 		{Name: "part_section", Type: field.TypeInt, Nullable: true},
 	}
 	// PartsTable holds the schema information for the "parts" table.
@@ -39,7 +40,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "parts_sections_section",
-				Columns:    []*schema.Column{PartsColumns[6]},
+				Columns:    []*schema.Column{PartsColumns[7]},
 				RefColumns: []*schema.Column{SectionsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

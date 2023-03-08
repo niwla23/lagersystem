@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -13,7 +13,7 @@ type PositionAddData struct {
 	WarehouseId int `json:"warehouseId"`
 }
 
-func registerPositionRoutes(router fiber.Router, client *ent.Client, ctx context.Context) {
+func RegisterPositionRoutes(router fiber.Router, client *ent.Client, ctx context.Context) {
 	router.Post("/", func(c *fiber.Ctx) error {
 		data := new(PositionAddData)
 

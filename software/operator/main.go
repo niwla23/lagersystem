@@ -14,7 +14,7 @@ func main() {
 		time.Sleep(1870 * time.Millisecond)
 		return c.JSON(&fiber.Map{
 			"status":   "success",
-			"boxId":    69,
+			"boxId":    "7de68773-ae64-46b3-86e8-d693f4396ba0",
 			"duration": 1.87,
 		})
 	})
@@ -23,9 +23,9 @@ func main() {
 		positionId, _ := strconv.Atoi(c.Params("positionId"))
 		time.Sleep(9 * time.Second)
 		return c.JSON(&fiber.Map{
-			"status":   "success",
-			"boxId":    positionId,
-			"duration": 9.69,
+			"status":     "success",
+			"positionId": positionId,
+			"duration":   9.69,
 		})
 	})
 
@@ -33,9 +33,9 @@ func main() {
 		positionId, _ := strconv.Atoi(c.Params("positionId"))
 		time.Sleep(9 * time.Second)
 		return c.JSON(&fiber.Map{
-			"status":   "success",
-			"boxId":    positionId,
-			"duration": 9.69,
+			"status":     "success",
+			"positionId": positionId,
+			"duration":   9.69,
 		})
 	})
 
