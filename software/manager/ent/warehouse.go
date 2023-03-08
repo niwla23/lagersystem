@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -26,7 +27,7 @@ type Warehouse struct {
 	Description string `json:"description,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the WarehouseQuery when eager-loading is set.
-	Edges WarehouseEdges `json:"edges"`
+	Edges WarehouseEdges `json:"-"`
 }
 
 // WarehouseEdges holds the relations/edges for other nodes in the graph.
@@ -149,6 +150,18 @@ func (w *Warehouse) String() string {
 	builder.WriteString(w.Description)
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (w *Warehouse) MarshalJSON() ([]byte, error) {
+	type Alias Warehouse
+	return json.Marshal(&struct {
+		*Alias
+		WarehouseEdges
+	}{
+		Alias:          (*Alias)(w),
+		WarehouseEdges: w.Edges,
+	})
 }
 
 // Warehouses is a parsable slice of Warehouse.

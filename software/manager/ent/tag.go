@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -26,7 +27,7 @@ type Tag struct {
 	Description string `json:"description,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TagQuery when eager-loading is set.
-	Edges        TagEdges `json:"edges"`
+	Edges        TagEdges `json:"-"`
 	tag_children *int
 }
 
@@ -195,6 +196,18 @@ func (t *Tag) String() string {
 	builder.WriteString(t.Description)
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (t *Tag) MarshalJSON() ([]byte, error) {
+	type Alias Tag
+	return json.Marshal(&struct {
+		*Alias
+		TagEdges
+	}{
+		Alias:    (*Alias)(t),
+		TagEdges: t.Edges,
+	})
 }
 
 // Tags is a parsable slice of Tag.

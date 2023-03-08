@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -23,7 +24,7 @@ type Section struct {
 	UpdatedAt time.Time `json:"updatedAt,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SectionQuery when eager-loading is set.
-	Edges        SectionEdges `json:"edges"`
+	Edges        SectionEdges `json:"-"`
 	box_sections *int
 }
 
@@ -156,6 +157,18 @@ func (s *Section) String() string {
 	builder.WriteString(s.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (s *Section) MarshalJSON() ([]byte, error) {
+	type Alias Section
+	return json.Marshal(&struct {
+		*Alias
+		SectionEdges
+	}{
+		Alias:        (*Alias)(s),
+		SectionEdges: s.Edges,
+	})
 }
 
 // Sections is a parsable slice of Section.

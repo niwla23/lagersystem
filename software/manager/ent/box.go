@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -26,7 +27,7 @@ type Box struct {
 	BoxId uuid.UUID `json:"boxId,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BoxQuery when eager-loading is set.
-	Edges BoxEdges `json:"edges"`
+	Edges BoxEdges `json:"-"`
 }
 
 // BoxEdges holds the relations/edges for other nodes in the graph.
@@ -34,7 +35,7 @@ type BoxEdges struct {
 	// Sections holds the value of the sections edge.
 	Sections []*Section `json:"sections,omitempty"`
 	// Position holds the value of the position edge.
-	Position *Position `json:"position,omitempty"`
+	Position *Position `json:"position"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
@@ -160,6 +161,18 @@ func (b *Box) String() string {
 	builder.WriteString(fmt.Sprintf("%v", b.BoxId))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (b *Box) MarshalJSON() ([]byte, error) {
+	type Alias Box
+	return json.Marshal(&struct {
+		*Alias
+		BoxEdges
+	}{
+		Alias:    (*Alias)(b),
+		BoxEdges: b.Edges,
+	})
 }
 
 // Boxes is a parsable slice of Box.

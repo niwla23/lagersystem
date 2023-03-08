@@ -22,7 +22,7 @@ func (Box) Fields() []ent.Field {
 	return []ent.Field{
 		field.Time("createdAt").Default(time.Now),
 		field.Time("updatedAt").Default(time.Now),
-		field.UUID("boxId", uuid.UUID{}),
+		field.UUID("boxId", uuid.UUID{}).Unique(),
 	}
 }
 
@@ -30,7 +30,7 @@ func (Box) Fields() []ent.Field {
 func (Box) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("sections", Section.Type),
-		edge.To("position", Position.Type).Unique(),
+		edge.To("position", Position.Type).Unique().StructTag(`json:"position"`),
 	}
 }
 

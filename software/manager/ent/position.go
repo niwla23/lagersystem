@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -26,7 +27,7 @@ type Position struct {
 	PositionId int `json:"positionId,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PositionQuery when eager-loading is set.
-	Edges               PositionEdges `json:"edges"`
+	Edges               PositionEdges `json:"-"`
 	box_position        *int
 	warehouse_positions *int
 }
@@ -182,6 +183,18 @@ func (po *Position) String() string {
 	builder.WriteString(fmt.Sprintf("%v", po.PositionId))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (po *Position) MarshalJSON() ([]byte, error) {
+	type Alias Position
+	return json.Marshal(&struct {
+		*Alias
+		PositionEdges
+	}{
+		Alias:         (*Alias)(po),
+		PositionEdges: po.Edges,
+	})
 }
 
 // Positions is a parsable slice of Position.

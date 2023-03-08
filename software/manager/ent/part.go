@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -31,7 +32,7 @@ type Part struct {
 	Amount int `json:"amount"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PartQuery when eager-loading is set.
-	Edges        PartEdges `json:"edges"`
+	Edges        PartEdges `json:"-"`
 	part_section *int
 }
 
@@ -220,6 +221,18 @@ func (pa *Part) String() string {
 	builder.WriteString(fmt.Sprintf("%v", pa.Amount))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (pa *Part) MarshalJSON() ([]byte, error) {
+	type Alias Part
+	return json.Marshal(&struct {
+		*Alias
+		PartEdges
+	}{
+		Alias:     (*Alias)(pa),
+		PartEdges: pa.Edges,
+	})
 }
 
 // Parts is a parsable slice of Part.

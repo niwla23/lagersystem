@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -29,7 +30,7 @@ type Property struct {
 	Type string `json:"type,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PropertyQuery when eager-loading is set.
-	Edges           PropertyEdges `json:"edges"`
+	Edges           PropertyEdges `json:"-"`
 	part_properties *int
 }
 
@@ -175,6 +176,18 @@ func (pr *Property) String() string {
 	builder.WriteString(pr.Type)
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (pr *Property) MarshalJSON() ([]byte, error) {
+	type Alias Property
+	return json.Marshal(&struct {
+		*Alias
+		PropertyEdges
+	}{
+		Alias:         (*Alias)(pr),
+		PropertyEdges: pr.Edges,
+	})
 }
 
 // Properties is a parsable slice of Property.

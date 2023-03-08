@@ -37,4 +37,20 @@ func RegisterBoxRoutes(router fiber.Router, client *ent.Client, ctx context.Cont
 		}
 		return c.SendString(string(responseData))
 	})
+
+	router.Get("/", func(c *fiber.Ctx) error {
+		// get all boxes from db
+		parts, err := client.Box.Query().WithPosition().All(ctx)
+		if err != nil {
+			return err
+		}
+
+		// encode boxes to json
+		responseData, err := json.Marshal(parts)
+		if err != nil {
+			return err
+		}
+		return c.SendString(string(responseData))
+	})
+
 }
