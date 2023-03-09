@@ -21,7 +21,7 @@ func main() {
 			&EncodeExtension{},
 		),
 	}
-	err := entc.Generate("./schema", &gen.Config{}, opts...)
+	err := entc.Generate("./schema", &gen.Config{Target: "./generated", Package: "github.com/niwla23/lagersystem/manager/ent/generated"}, opts...)
 	if err != nil {
 		log.Fatalf("running ent codegen: %v", err)
 	}

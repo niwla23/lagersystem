@@ -13,11 +13,13 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	_ "github.com/mattn/go-sqlite3"
-	_ "github.com/niwla23/lagersystem/manager/ent/runtime"
+
+	_ "github.com/niwla23/lagersystem/manager/ent/generated/runtime"
 	"github.com/niwla23/lagersystem/manager/typesense_wrapper"
 	"github.com/typesense/typesense-go/typesense/api"
 
-	"github.com/niwla23/lagersystem/manager/ent"
+	ent "github.com/niwla23/lagersystem/manager/ent/generated"
+
 	"github.com/niwla23/lagersystem/manager/handlers"
 )
 

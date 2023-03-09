@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niwla23/lagersystem/manager/ent"
+	ent "github.com/niwla23/lagersystem/manager/ent/generated"
 )
 
 type BoxAddData struct {

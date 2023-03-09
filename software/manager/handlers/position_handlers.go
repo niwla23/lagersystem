@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/niwla23/lagersystem/manager/ent"
+	ent_gen "github.com/niwla23/lagersystem/manager/ent/generated"
 )
 
 type PositionAddData struct {
@@ -13,7 +13,7 @@ type PositionAddData struct {
 	WarehouseId int `json:"warehouseId"`
 }
 
-func RegisterPositionRoutes(router fiber.Router, client *ent.Client, ctx context.Context) {
+func RegisterPositionRoutes(router fiber.Router, client *ent_gen.Client, ctx context.Context) {
 	router.Post("/", func(c *fiber.Ctx) error {
 		data := new(PositionAddData)
 

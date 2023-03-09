@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	gen "github.com/niwla23/lagersystem/manager/ent"
-	"github.com/niwla23/lagersystem/manager/ent/hook"
+	gen "github.com/niwla23/lagersystem/manager/ent/generated"
+	"github.com/niwla23/lagersystem/manager/ent/generated/hook"
 )
 
 // Box holds the schema definition for the Box entity.

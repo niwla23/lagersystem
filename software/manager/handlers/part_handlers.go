@@ -8,10 +8,10 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/niwla23/lagersystem/manager/ent"
-	"github.com/niwla23/lagersystem/manager/ent/part"
-	"github.com/niwla23/lagersystem/manager/ent/property"
-	"github.com/niwla23/lagersystem/manager/ent/tag"
+	ent "github.com/niwla23/lagersystem/manager/ent/generated"
+	"github.com/niwla23/lagersystem/manager/ent/generated/part"
+	"github.com/niwla23/lagersystem/manager/ent/generated/property"
+	"github.com/niwla23/lagersystem/manager/ent/generated/tag"
 )
 
 type PropertyAddData struct {

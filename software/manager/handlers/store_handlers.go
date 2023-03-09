@@ -10,10 +10,14 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niwla23/lagersystem/manager/ent"
-	"github.com/niwla23/lagersystem/manager/ent/box"
-	"github.com/niwla23/lagersystem/manager/ent/position"
-	"github.com/niwla23/lagersystem/manager/ent/warehouse"
+
+	// "github.com/niwla23/lagersystem/manager/ent/box"
+	ent_gen "github.com/niwla23/lagersystem/manager/ent/generated"
+	"github.com/niwla23/lagersystem/manager/ent/generated/box"
+	"github.com/niwla23/lagersystem/manager/ent/generated/position"
+	"github.com/niwla23/lagersystem/manager/ent/generated/warehouse"
+	// "github.com/niwla23/lagersystem/manager/ent/position"
+	// "github.com/niwla23/lagersystem/manager/ent/warehouse"
 )
 
 type scanBoxIdResponse struct {
@@ -22,7 +26,7 @@ type scanBoxIdResponse struct {
 	Duration float64   `json:"duration"`
 }
 
-func RegisterStoreRoutes(router fiber.Router, client *ent.Client, ctx context.Context) {
+func RegisterStoreRoutes(router fiber.Router, client *ent_gen.Client, ctx context.Context) {
 	router.Post("/by-scanner", func(c *fiber.Ctx) error {
 		// get boxId from operator service
 		resp, err := http.Get("http://localhost:3000/scanBoxId")
@@ -45,7 +49,7 @@ func RegisterStoreRoutes(router fiber.Router, client *ent.Client, ctx context.Co
 		// try finding position of box in the database
 		positionX, err := boxX.QueryPosition().Only(ctx)
 
-		target := &ent.NotFoundError{}
+		target := &ent_gen.NotFoundError{}
 		if errors.As(err, &target) {
 			// we have no position stored, find one
 			positionX, err = client.Position.Query().

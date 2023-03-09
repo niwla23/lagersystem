@@ -7,8 +7,8 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	gen "github.com/niwla23/lagersystem/manager/ent"
-	"github.com/niwla23/lagersystem/manager/ent/hook"
+	gen "github.com/niwla23/lagersystem/manager/ent/generated"
+	"github.com/niwla23/lagersystem/manager/ent/generated/hook"
 )
 
 // Warehouse holds the schema definition for the Warehouse entity.
