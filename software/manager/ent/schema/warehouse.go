@@ -22,7 +22,7 @@ func (Warehouse) Fields() []ent.Field {
 		field.Time("createdAt").Default(time.Now),
 		field.Time("updatedAt").Default(time.Now),
 		field.String("name").NotEmpty().Unique(),
-		field.String("description"),
+		field.String("description").Nillable(),
 	}
 }
 

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	ent_gen "github.com/niwla23/lagersystem/manager/ent/generated"
@@ -36,6 +35,16 @@ func RegisterPositionRoutes(router fiber.Router, client *ent_gen.Client, ctx con
 			return err
 		}
 
-		return c.SendString(fmt.Sprint(positionX.PositionId))
+		return c.JSON(positionX)
+	})
+
+	router.Get("/", func(c *fiber.Ctx) error {
+		// get all positions from db
+		positions, err := client.Position.Query().WithStoredBox().WithWarehouse().All(ctx)
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(positions)
 	})
 }

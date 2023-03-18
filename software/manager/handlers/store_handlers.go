@@ -75,31 +75,3 @@ func RegisterStoreRoutes(router fiber.Router, client *ent_gen.Client, ctx contex
 		})
 	})
 }
-
-// router.Post("/:partId<int>/store", func(c *fiber.Ctx) error {
-// partId, _ := strconv.Atoi(c.Params("partId"))
-
-// // get part from db
-// part, err := client.Part.Get(ctx, partId)
-// if err != nil {
-// 	return err
-// }
-// positionX, err := part.QuerySection().QueryBox().QueryPosition().Only(ctx)
-
-// target := &ent.NotFoundError{}
-// if errors.As(err, &target) {
-// 	// find free position
-// 	positionX, err = client.Position.Query().
-// 		Where(position.HasWarehouseWith(warehouse.ID(1))).
-// 		Where(position.Not(position.HasStoredBox())).
-// 		Only(ctx)
-
-// 	if err != nil {
-// 		return err
-// 	}
-// } else if err != nil {
-// 	return err
-// }
-
-// return c.SendString("in another universe we would ask operator service to store part at loaction: " + fmt.Sprint(positionX.ID))
-// })

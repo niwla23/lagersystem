@@ -125,6 +125,9 @@ func main() {
 	storeHandlers := app.Group("/store")
 	handlers.RegisterStoreRoutes(storeHandlers, client, ctx)
 
+	warehouseHandlers := app.Group("/warehouses")
+	handlers.RegisterWarehouseRoutes(warehouseHandlers, client, ctx)
+
 	app.Listen(":3001")
 }
 

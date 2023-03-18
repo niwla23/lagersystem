@@ -195,7 +195,7 @@ func (wc *WarehouseCreate) createSpec() (*Warehouse, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := wc.mutation.Description(); ok {
 		_spec.SetField(warehouse.FieldDescription, field.TypeString, value)
-		_node.Description = value
+		_node.Description = &value
 	}
 	if nodes := wc.mutation.PositionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

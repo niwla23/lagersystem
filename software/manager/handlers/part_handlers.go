@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -105,7 +104,7 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			return err
 		}
 
-		part, err := client.Part.Create().
+		partX, err := client.Part.Create().
 			SetName(data.Name).
 			SetDescription(data.Description).
 			SetAmount(amount).
@@ -117,17 +116,12 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		}
 
 		// add properties
-		err = createOrUpdatePropertiesFromMap(part, &data.Properties, client, ctx)
+		err = createOrUpdatePropertiesFromMap(partX, &data.Properties, client, ctx)
 		if err != nil {
 			return err
 		}
 
-		// encode part to json
-		responseData, err := json.Marshal(part)
-		if err != nil {
-			return err
-		}
-		return c.SendString(string(responseData))
+		return c.JSON(partX)
 	})
 
 	router.Put("/:partId<int>", func(c *fiber.Ctx) error {
@@ -145,8 +139,8 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			amount = *data.Amount
 		}
 
-		// get part from db
-		part, err := client.Part.Query().Where(part.ID(partId)).WithTags().WithProperties().Only(ctx)
+		// get partX from db
+		partX, err := client.Part.Query().Where(part.ID(partId)).WithTags().WithProperties().Only(ctx)
 		if err != nil {
 			return err
 		}
@@ -158,13 +152,13 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		}
 
 		// update properties
-		err = createOrUpdatePropertiesFromMap(part, &data.Properties, client, ctx)
+		err = createOrUpdatePropertiesFromMap(partX, &data.Properties, client, ctx)
 		if err != nil {
 			return err
 		}
 
 		// update part with request data
-		part, err = part.Update().
+		partX, err = partX.Update().
 			SetName(data.Name).
 			SetDescription(data.Description).
 			SetAmount(amount).
@@ -176,12 +170,7 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			return err
 		}
 
-		// encode part to json
-		responseData, err := json.Marshal(part)
-		if err != nil {
-			return err
-		}
-		return c.SendString(string(responseData))
+		return c.JSON(partX)
 	})
 
 	router.Get("/", func(c *fiber.Ctx) error {
@@ -191,12 +180,25 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			return err
 		}
 
-		// encode parts to json
-		responseData, err := json.Marshal(parts)
+		return c.JSON(parts)
+	})
+
+	router.Delete("/:partId<int>", func(c *fiber.Ctx) error {
+		partId, _ := strconv.Atoi(c.Params("partId"))
+
+		// parse request body
+		data := new(PartAddData)
+		if err := c.BodyParser(data); err != nil {
+			return err
+		}
+
+		partX, err := client.Part.UpdateOneID(partId).SetDeleted(true).Save(ctx)
+
 		if err != nil {
 			return err
 		}
-		return c.SendString(string(responseData))
+
+		return c.JSON(partX)
 	})
 
 	router.Post("/:partId<int>/deliver", func(c *fiber.Ctx) error {
@@ -214,33 +216,4 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 
 		return c.SendString("in another universe we would ask operator service to deliver box at position: " + fmt.Sprint(position.ID))
 	})
-
-	// THIS IS PROBABLY COMPLETLY USELESS AS YOU WANT TO STORE THE BOX PLACED ON THE READER AND NOT THE PART
-	// router.Post("/:partId<int>/store", func(c *fiber.Ctx) error {
-	// 	partId, _ := strconv.Atoi(c.Params("partId"))
-
-	// 	// get part from db
-	// 	part, err := client.Part.Get(ctx, partId)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	positionX, err := part.QuerySection().QueryBox().QueryPosition().Only(ctx)
-
-	// 	target := &ent.NotFoundError{}
-	// 	if errors.As(err, &target) {
-	// 		// find free position
-	// 		positionX, err = client.Position.Query().
-	// 			Where(position.HasWarehouseWith(warehouse.ID(1))).
-	// 			Where(position.Not(position.HasStoredBox())).
-	// 			Only(ctx)
-
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 	} else if err != nil {
-	// 		return err
-	// 	}
-
-	// 	return c.SendString("in another universe we would ask operator service to store part at loaction: " + fmt.Sprint(positionX.ID))
-	// })
 }
