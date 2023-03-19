@@ -25,6 +25,8 @@ const (
 	FieldDescription = "description"
 	// FieldAmount holds the string denoting the amount field in the database.
 	FieldAmount = "amount"
+	// FieldImageId holds the string denoting the imageid field in the database.
+	FieldImageId = "image_id"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
 	// EdgeProperties holds the string denoting the properties edge name in mutations.
@@ -63,6 +65,7 @@ var Columns = []string{
 	FieldName,
 	FieldDescription,
 	FieldAmount,
+	FieldImageId,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "parts"

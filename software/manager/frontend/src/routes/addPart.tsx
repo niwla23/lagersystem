@@ -2,13 +2,16 @@ import React, { useState } from "react"
 import PartAddDataForm, {AddPartDataForm} from "../components/partAddDataForm"
 import ChoosePartAddMode, { AddMode } from "../components/partAddMode"
 import PartAddSearch from "../components/partAddSearch"
+import { CreatePartData } from "../types"
+import * as api from "../api"
+
 
 export default function AddPart() {
   type AddStage = "selectMode" | "dataForm" | "searchPart" | "getting" | "storing" | "confirmPutPartIn"
 
   const [stage, setStage] = useState<AddStage>("selectMode")
   const [partAddMode, setPartAddMode] = useState<AddMode>("freeSection")
-  const [partFormData, setPartFormData] = useState<AddPartDataForm | null>(null)
+  const [partCreateData, setPartCreateData] = useState<CreatePartData | null>(null)
 
 
   let content = <div></div>
@@ -19,8 +22,9 @@ export default function AddPart() {
   } else if (stage === "dataForm") {
     content = (
       <PartAddDataForm
-        submit={(form) => {
-          setPartFormData(form)
+        submit={(form, image) => {
+          setPartCreateData(form)
+          api.createPart(form, image)
           switch (partAddMode) {
             case "freeSection":
               setStage("getting")
@@ -53,7 +57,7 @@ export default function AddPart() {
     content = (
       <div className="h-full grid place-items-center">
         <div className="w-full">
-          <h2 className="font-bold text-xl">Storing part "{partFormData?.partName}"...</h2>
+          <h2 className="font-bold text-xl">Storing part "{partCreateData?.partName}"...</h2>
           <progress className="progress w-full"></progress>
         </div>
       </div>

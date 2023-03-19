@@ -6,7 +6,7 @@ export type AddMode = "freeSection" | "storeWithPart" | "storeOnly"
 let ModeCard = (props: { title: string; text: string; active: boolean; onClick: () => void }) => {
   return (
     <div
-      className={`card w-full bg-base-100 shadow-xl transition-all duration-200 ${props.active ? "bg-primary" : ""}`}
+      className={`card w-full bg-base-100 shadow-xl transition-all duration-200 ring-primary ${props.active ? "ring-4" : ""}`}
       onClick={props.onClick}
     >
       <div className="card-body">
@@ -46,7 +46,9 @@ export default function PartAddMode(props: Props) {
           onClick={() => props.setModeChosen("storeOnly")}
         />
       </div>
-      <button className="btn w-full" onClick={props.submit}>Next</button>
+      <button className="btn w-full" onClick={props.submit}>
+        Next
+      </button>
     </div>
   )
 }

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/predicate"
 	"github.com/niwla23/lagersystem/manager/ent/generated/property"
@@ -103,6 +104,26 @@ func (pu *PartUpdate) SetNillableAmount(i *int) *PartUpdate {
 // AddAmount adds i to the "amount" field.
 func (pu *PartUpdate) AddAmount(i int) *PartUpdate {
 	pu.mutation.AddAmount(i)
+	return pu
+}
+
+// SetImageId sets the "imageId" field.
+func (pu *PartUpdate) SetImageId(u uuid.UUID) *PartUpdate {
+	pu.mutation.SetImageId(u)
+	return pu
+}
+
+// SetNillableImageId sets the "imageId" field if the given value is not nil.
+func (pu *PartUpdate) SetNillableImageId(u *uuid.UUID) *PartUpdate {
+	if u != nil {
+		pu.SetImageId(*u)
+	}
+	return pu
+}
+
+// ClearImageId clears the value of the "imageId" field.
+func (pu *PartUpdate) ClearImageId() *PartUpdate {
+	pu.mutation.ClearImageId()
 	return pu
 }
 
@@ -286,6 +307,12 @@ func (pu *PartUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := pu.mutation.AddedAmount(); ok {
 		_spec.AddField(part.FieldAmount, field.TypeInt, value)
+	}
+	if value, ok := pu.mutation.ImageId(); ok {
+		_spec.SetField(part.FieldImageId, field.TypeUUID, value)
+	}
+	if pu.mutation.ImageIdCleared() {
+		_spec.ClearField(part.FieldImageId, field.TypeUUID)
 	}
 	if pu.mutation.TagsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -525,6 +552,26 @@ func (puo *PartUpdateOne) AddAmount(i int) *PartUpdateOne {
 	return puo
 }
 
+// SetImageId sets the "imageId" field.
+func (puo *PartUpdateOne) SetImageId(u uuid.UUID) *PartUpdateOne {
+	puo.mutation.SetImageId(u)
+	return puo
+}
+
+// SetNillableImageId sets the "imageId" field if the given value is not nil.
+func (puo *PartUpdateOne) SetNillableImageId(u *uuid.UUID) *PartUpdateOne {
+	if u != nil {
+		puo.SetImageId(*u)
+	}
+	return puo
+}
+
+// ClearImageId clears the value of the "imageId" field.
+func (puo *PartUpdateOne) ClearImageId() *PartUpdateOne {
+	puo.mutation.ClearImageId()
+	return puo
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (puo *PartUpdateOne) AddTagIDs(ids ...int) *PartUpdateOne {
 	puo.mutation.AddTagIDs(ids...)
@@ -729,6 +776,12 @@ func (puo *PartUpdateOne) sqlSave(ctx context.Context) (_node *Part, err error) 
 	}
 	if value, ok := puo.mutation.AddedAmount(); ok {
 		_spec.AddField(part.FieldAmount, field.TypeInt, value)
+	}
+	if value, ok := puo.mutation.ImageId(); ok {
+		_spec.SetField(part.FieldImageId, field.TypeUUID, value)
+	}
+	if puo.mutation.ImageIdCleared() {
+		_spec.ClearField(part.FieldImageId, field.TypeUUID)
 	}
 	if puo.mutation.TagsCleared() {
 		edge := &sqlgraph.EdgeSpec{

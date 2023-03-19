@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/section"
 )
@@ -30,6 +31,8 @@ type Part struct {
 	Description string `json:"description,omitempty"`
 	// -1 means amount is unknown
 	Amount int `json:"amount"`
+	// ImageId holds the value of the "imageId" field.
+	ImageId uuid.UUID `json:"imageId,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PartQuery when eager-loading is set.
 	Edges        PartEdges `json:"-"`
@@ -93,6 +96,8 @@ func (*Part) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case part.FieldCreatedAt, part.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case part.FieldImageId:
+			values[i] = new(uuid.UUID)
 		case part.ForeignKeys[0]: // part_section
 			values[i] = new(sql.NullInt64)
 		default:
@@ -151,6 +156,12 @@ func (pa *Part) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field amount", values[i])
 			} else if value.Valid {
 				pa.Amount = int(value.Int64)
+			}
+		case part.FieldImageId:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field imageId", values[i])
+			} else if value != nil {
+				pa.ImageId = *value
 			}
 		case part.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -219,6 +230,9 @@ func (pa *Part) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("amount=")
 	builder.WriteString(fmt.Sprintf("%v", pa.Amount))
+	builder.WriteString(", ")
+	builder.WriteString("imageId=")
+	builder.WriteString(fmt.Sprintf("%v", pa.ImageId))
 	builder.WriteByte(')')
 	return builder.String()
 }

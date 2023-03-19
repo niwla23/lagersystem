@@ -10,12 +10,12 @@ module.exports = {
   plugins: [require("daisyui")],
   daisyui: {
     styled: true,
-    themes: ["bumblebee", "cupcake", "dracula"],
+    themes: ["lofi", "cupcake", "dracula", "halloween"],
     base: true,
     utils: true,
     logs: true,
     rtl: false,
     prefix: "",
-    // darkTheme: "dracula",
+    darkTheme: "",
   },
 }

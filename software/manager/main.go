@@ -14,9 +14,10 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	_ "github.com/mattn/go-sqlite3"
 
+	"github.com/niwla23/lagersystem/manager/config"
 	_ "github.com/niwla23/lagersystem/manager/ent/generated/runtime"
+	"github.com/niwla23/lagersystem/manager/typesense_sync"
 	"github.com/niwla23/lagersystem/manager/typesense_wrapper"
-	"github.com/typesense/typesense-go/typesense/api"
 
 	ent "github.com/niwla23/lagersystem/manager/ent/generated"
 
@@ -24,6 +25,8 @@ import (
 )
 
 func main() {
+	config.LoadConfigFromEnvironment()
+
 	// client, err := ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	client, err := ent.Open("sqlite3", "file:///tmp/db.sqlite?_fk=1")
 	if err != nil {
@@ -39,40 +42,13 @@ func main() {
 		log.Fatalf("failed creating schema resources: %v", err)
 	}
 
-	partCollection := typesense_wrapper.TypesenseClient.Collection("parts")
-	_, err = partCollection.Retrieve()
-	if err != nil {
-		if err.Error() == `status: 404 response: {"message": "Not Found"}` {
-			schema := &api.CollectionSchema{
-				Name: "parts",
-				Fields: []api.Field{
-					{
-						Name: "id",
-						Type: "string",
-					},
-					{
-						Name: "name",
-						Type: "string",
-					},
-					{
-						Name: "description",
-						Type: "string",
-					},
-				},
-				// DefaultSortingField: "num_employees",
-			}
-
-			_, err = typesense_wrapper.TypesenseClient.Collections().Create(schema)
-			if err != nil {
-				panic(fmt.Sprintf("failed creating typesense collection: %v", err))
-			}
-		} else {
-			panic(fmt.Sprintf("failed getting typesense collection: %v", err))
-		}
+	if !fiber.IsChild() {
+		go typesense_sync.SyncBackgroundTask()
 	}
 
 	app := fiber.New(fiber.Config{
-		AppName: "Storagesystem Manager Service",
+		AppName:   "Storagesystem Manager Service",
+		BodyLimit: 100 * 1024 * 1024, // size in MB,
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			fmt.Println(err.Error())
 
@@ -112,6 +88,8 @@ func main() {
 	app.Use(favicon.New())
 	app.Use(recover.New(recover.Config{EnableStackTrace: true}))
 	app.Use(etag.New())
+
+	app.Static("/static", config.StoragePath)
 
 	partHandlers := app.Group("/parts")
 	handlers.RegisterPartRoutes(partHandlers, client, ctx)

@@ -5,4 +5,4 @@ generate:
 	go generate ./ent
 
 dev:
-	go run main.go
+	STORAGE_PATH=/tmp DB_URI=file:///tmp/db.sqlite?_fk=1 go run main.go

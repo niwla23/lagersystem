@@ -1,7 +1,37 @@
-import React from "react"
+import React, { useEffect } from "react"
 import PartCard from "../components/partCard"
+import * as api from "../api"
+import { PartModel } from "../types"
 
 export default function Home() {
+  let [parts, setParts] = React.useState<PartModel[]>([])
+
+  const loadAllParts = async () => {
+    let x = await api.getAllParts()
+    setParts(x)
+  }
+
+  useEffect(() => {
+    loadAllParts()
+  }, [])
+
+  let renderedParts = parts.map((part) => {
+    let tags = part.tags ? part.tags.map((tag) => tag.name) : []
+
+    return (
+      <PartCard
+        id={part.id}
+        onActionClick={() => {}}
+        actionText="deliver"
+        name={part.name}
+        description={part.description || "No description"}
+        tags={tags}
+        properties={part.properties || []}
+        imageUrl={api.getImageUrl(part.imageId)}
+      />
+    )
+  })
+
   return (
     <div className="h-full p-4">
       <div className="input-group w-full pb-4">
@@ -12,17 +42,7 @@ export default function Home() {
           </svg>
         </button>
       </div>
-      <main className="grid gap-2">
-        <PartCard id={1} onActionClick={()=>{}} actionText="deliver" name="LUFTSTROM" />
-        <PartCard id={2} onActionClick={()=>{}} actionText="deliver" name="EFFIZIENZ" />
-        <PartCard id={3} onActionClick={()=>{}} actionText="deliver" name="WERBUNG" />
-        <PartCard id={4} onActionClick={()=>{}} actionText="deliver" name="WOHN" />
-        <PartCard id={5} onActionClick={()=>{}} actionText="deliver" name="WASCHMASCHINE" />
-        <PartCard id={6} onActionClick={()=>{}} actionText="deliver" name="dymo band" />
-        <PartCard id={7} onActionClick={()=>{}} actionText="deliver" name="y" />
-        <PartCard id={8} onActionClick={()=>{}} actionText="deliver" name="feuerzeug" />
-        <PartCard id={9} onActionClick={()=>{}} actionText="deliver" name="dw" />
-      </main>
+      <main className="grid gap-2">{renderedParts}</main>
     </div>
   )
 }

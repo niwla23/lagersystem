@@ -640,6 +640,7 @@ type PartMutation struct {
 	description       *string
 	amount            *int
 	addamount         *int
+	imageId           *uuid.UUID
 	clearedFields     map[string]struct{}
 	tags              map[int]struct{}
 	removedtags       map[int]struct{}
@@ -988,6 +989,55 @@ func (m *PartMutation) ResetAmount() {
 	m.addamount = nil
 }
 
+// SetImageId sets the "imageId" field.
+func (m *PartMutation) SetImageId(u uuid.UUID) {
+	m.imageId = &u
+}
+
+// ImageId returns the value of the "imageId" field in the mutation.
+func (m *PartMutation) ImageId() (r uuid.UUID, exists bool) {
+	v := m.imageId
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldImageId returns the old "imageId" field's value of the Part entity.
+// If the Part object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PartMutation) OldImageId(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldImageId is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldImageId requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldImageId: %w", err)
+	}
+	return oldValue.ImageId, nil
+}
+
+// ClearImageId clears the value of the "imageId" field.
+func (m *PartMutation) ClearImageId() {
+	m.imageId = nil
+	m.clearedFields[part.FieldImageId] = struct{}{}
+}
+
+// ImageIdCleared returns if the "imageId" field was cleared in this mutation.
+func (m *PartMutation) ImageIdCleared() bool {
+	_, ok := m.clearedFields[part.FieldImageId]
+	return ok
+}
+
+// ResetImageId resets all changes to the "imageId" field.
+func (m *PartMutation) ResetImageId() {
+	m.imageId = nil
+	delete(m.clearedFields, part.FieldImageId)
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by ids.
 func (m *PartMutation) AddTagIDs(ids ...int) {
 	if m.tags == nil {
@@ -1169,7 +1219,7 @@ func (m *PartMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PartMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.createdAt != nil {
 		fields = append(fields, part.FieldCreatedAt)
 	}
@@ -1187,6 +1237,9 @@ func (m *PartMutation) Fields() []string {
 	}
 	if m.amount != nil {
 		fields = append(fields, part.FieldAmount)
+	}
+	if m.imageId != nil {
+		fields = append(fields, part.FieldImageId)
 	}
 	return fields
 }
@@ -1208,6 +1261,8 @@ func (m *PartMutation) Field(name string) (ent.Value, bool) {
 		return m.Description()
 	case part.FieldAmount:
 		return m.Amount()
+	case part.FieldImageId:
+		return m.ImageId()
 	}
 	return nil, false
 }
@@ -1229,6 +1284,8 @@ func (m *PartMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldDescription(ctx)
 	case part.FieldAmount:
 		return m.OldAmount(ctx)
+	case part.FieldImageId:
+		return m.OldImageId(ctx)
 	}
 	return nil, fmt.Errorf("unknown Part field %s", name)
 }
@@ -1280,6 +1337,13 @@ func (m *PartMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAmount(v)
 		return nil
+	case part.FieldImageId:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetImageId(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Part field %s", name)
 }
@@ -1324,7 +1388,11 @@ func (m *PartMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *PartMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(part.FieldImageId) {
+		fields = append(fields, part.FieldImageId)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -1337,6 +1405,11 @@ func (m *PartMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *PartMutation) ClearField(name string) error {
+	switch name {
+	case part.FieldImageId:
+		m.ClearImageId()
+		return nil
+	}
 	return fmt.Errorf("unknown Part nullable field %s", name)
 }
 
@@ -1361,6 +1434,9 @@ func (m *PartMutation) ResetField(name string) error {
 		return nil
 	case part.FieldAmount:
 		m.ResetAmount()
+		return nil
+	case part.FieldImageId:
+		m.ResetImageId()
 		return nil
 	}
 	return fmt.Errorf("unknown Part field %s", name)

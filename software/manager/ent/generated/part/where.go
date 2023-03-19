@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/predicate"
 )
 
@@ -83,6 +84,11 @@ func Description(v string) predicate.Part {
 // Amount applies equality check predicate on the "amount" field. It's identical to AmountEQ.
 func Amount(v int) predicate.Part {
 	return predicate.Part(sql.FieldEQ(FieldAmount, v))
+}
+
+// ImageId applies equality check predicate on the "imageId" field. It's identical to ImageIdEQ.
+func ImageId(v uuid.UUID) predicate.Part {
+	return predicate.Part(sql.FieldEQ(FieldImageId, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "createdAt" field.
@@ -343,6 +349,56 @@ func AmountLT(v int) predicate.Part {
 // AmountLTE applies the LTE predicate on the "amount" field.
 func AmountLTE(v int) predicate.Part {
 	return predicate.Part(sql.FieldLTE(FieldAmount, v))
+}
+
+// ImageIdEQ applies the EQ predicate on the "imageId" field.
+func ImageIdEQ(v uuid.UUID) predicate.Part {
+	return predicate.Part(sql.FieldEQ(FieldImageId, v))
+}
+
+// ImageIdNEQ applies the NEQ predicate on the "imageId" field.
+func ImageIdNEQ(v uuid.UUID) predicate.Part {
+	return predicate.Part(sql.FieldNEQ(FieldImageId, v))
+}
+
+// ImageIdIn applies the In predicate on the "imageId" field.
+func ImageIdIn(vs ...uuid.UUID) predicate.Part {
+	return predicate.Part(sql.FieldIn(FieldImageId, vs...))
+}
+
+// ImageIdNotIn applies the NotIn predicate on the "imageId" field.
+func ImageIdNotIn(vs ...uuid.UUID) predicate.Part {
+	return predicate.Part(sql.FieldNotIn(FieldImageId, vs...))
+}
+
+// ImageIdGT applies the GT predicate on the "imageId" field.
+func ImageIdGT(v uuid.UUID) predicate.Part {
+	return predicate.Part(sql.FieldGT(FieldImageId, v))
+}
+
+// ImageIdGTE applies the GTE predicate on the "imageId" field.
+func ImageIdGTE(v uuid.UUID) predicate.Part {
+	return predicate.Part(sql.FieldGTE(FieldImageId, v))
+}
+
+// ImageIdLT applies the LT predicate on the "imageId" field.
+func ImageIdLT(v uuid.UUID) predicate.Part {
+	return predicate.Part(sql.FieldLT(FieldImageId, v))
+}
+
+// ImageIdLTE applies the LTE predicate on the "imageId" field.
+func ImageIdLTE(v uuid.UUID) predicate.Part {
+	return predicate.Part(sql.FieldLTE(FieldImageId, v))
+}
+
+// ImageIdIsNil applies the IsNil predicate on the "imageId" field.
+func ImageIdIsNil() predicate.Part {
+	return predicate.Part(sql.FieldIsNull(FieldImageId))
+}
+
+// ImageIdNotNil applies the NotNil predicate on the "imageId" field.
+func ImageIdNotNil() predicate.Part {
+	return predicate.Part(sql.FieldNotNull(FieldImageId))
 }
 
 // HasTags applies the HasEdge predicate on the "tags" edge.

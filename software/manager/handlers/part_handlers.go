@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+	"github.com/niwla23/lagersystem/manager/config"
 	ent "github.com/niwla23/lagersystem/manager/ent/generated"
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/property"
@@ -171,6 +174,39 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		}
 
 		return c.JSON(partX)
+	})
+
+	// storage := memory.New()
+
+	router.Put("/:partId<int>/image", func(c *fiber.Ctx) error {
+		partId, _ := strconv.Atoi(c.Params("partId"))
+
+		form, err := c.MultipartForm()
+		if err != nil {
+			return fiber.NewError(400, "please send a multipart form")
+		}
+
+		files := form.File["image"]
+		if len(files) != 1 {
+			return fiber.NewError(400, "please send exactly one file with the key 'image'")
+		}
+
+		// get partX from db
+		partX, err := client.Part.Get(ctx, partId)
+		if err != nil {
+			return err
+		}
+
+		imageId := uuid.New()
+		fp := filepath.Join(config.StoragePath, imageId.String())
+		err = c.SaveFile(files[0], fp)
+		if err != nil {
+			return err
+		}
+
+		partX.Update().SetImageId(imageId).Exec(ctx)
+
+		return err
 	})
 
 	router.Get("/", func(c *fiber.Ctx) error {

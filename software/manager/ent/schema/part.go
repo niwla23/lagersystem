@@ -7,6 +7,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	gen "github.com/niwla23/lagersystem/manager/ent/generated"
 	"github.com/niwla23/lagersystem/manager/ent/generated/hook"
 )
@@ -26,6 +27,7 @@ func (Part) Fields() []ent.Field {
 		field.String("description"),
 		// set struct tag so it won't omit 0 values
 		field.Int("amount").Default(-1).StructTag(`json:"amount"`).Comment("-1 means amount is unknown"),
+		field.UUID("imageId", uuid.UUID{}).Optional(),
 	}
 }
 

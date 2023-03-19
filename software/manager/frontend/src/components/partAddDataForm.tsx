@@ -1,4 +1,6 @@
+import { useRef, useState } from "react"
 import { useForm, SubmitHandler } from "react-hook-form"
+import { CreatePartData } from "../types"
 
 export type AddPartDataForm = {
   partName: string
@@ -9,18 +11,33 @@ export type AddPartDataForm = {
 }
 
 type Props = {
-  submit: (form: AddPartDataForm) => void
+  submit: (form: CreatePartData, image: File | undefined) => void
 }
 
 export default function PartAddDataForm(props: Props) {
+  let [selectedFile, setSelectedFile] = useState<File | undefined>(undefined)
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setSelectedFile(e.target.files?.item(0) || undefined)
+  }
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<AddPartDataForm>()
+
   const onSubmit: SubmitHandler<AddPartDataForm> = (data) => {
     console.log(data)
-    props.submit(data)
+
+    let creationData: CreatePartData = {
+      name: data.partName,
+      description: data.description,
+      tags: data.tags.split(","),
+      properties: {},
+      amount: -1,
+    }
+
+    props.submit(creationData, selectedFile)
   }
 
   return (
@@ -43,9 +60,9 @@ export default function PartAddDataForm(props: Props) {
       </div>
       <div>
         <label className="label">
-          <span className="label-text">Fotos wählen</span>
+          <span className="label-text">Foto wählen</span>
         </label>
-        <input type="file" className="file-input w-full" multiple />
+        <input type="file" className="file-input w-full" onChange={handleFileSelected} />
       </div>
       <div>
         <label className="label">

@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/property"
 	"github.com/niwla23/lagersystem/manager/ent/generated/section"
@@ -87,6 +88,20 @@ func (pc *PartCreate) SetAmount(i int) *PartCreate {
 func (pc *PartCreate) SetNillableAmount(i *int) *PartCreate {
 	if i != nil {
 		pc.SetAmount(*i)
+	}
+	return pc
+}
+
+// SetImageId sets the "imageId" field.
+func (pc *PartCreate) SetImageId(u uuid.UUID) *PartCreate {
+	pc.mutation.SetImageId(u)
+	return pc
+}
+
+// SetNillableImageId sets the "imageId" field if the given value is not nil.
+func (pc *PartCreate) SetNillableImageId(u *uuid.UUID) *PartCreate {
+	if u != nil {
+		pc.SetImageId(*u)
 	}
 	return pc
 }
@@ -282,6 +297,10 @@ func (pc *PartCreate) createSpec() (*Part, *sqlgraph.CreateSpec) {
 	if value, ok := pc.mutation.Amount(); ok {
 		_spec.SetField(part.FieldAmount, field.TypeInt, value)
 		_node.Amount = value
+	}
+	if value, ok := pc.mutation.ImageId(); ok {
+		_spec.SetField(part.FieldImageId, field.TypeUUID, value)
+		_node.ImageId = value
 	}
 	if nodes := pc.mutation.TagsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
