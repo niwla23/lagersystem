@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/niwla23/lagersystem/manager/config"
 	"github.com/niwla23/lagersystem/manager/typesense_wrapper"
 	"github.com/typesense/typesense-go/typesense/api"
 
@@ -14,7 +15,7 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 )
 
-var SYNC_INTERVAL = 30 * time.Second
+var SYNC_INTERVAL = 10 * time.Second
 
 func check(err error) {
 	if err != nil {
@@ -28,10 +29,24 @@ func syncPartsToTypesense(parts []*ent.Part) {
 	// so yeah that is how it is.
 	var documentsToIndex []interface{}
 	for _, part := range parts {
+
+		if part.Deleted {
+			_, err := typesense_wrapper.TypesenseClient.Collection("parts").Document(strconv.Itoa(part.ID)).Delete()
+			check(err)
+			continue
+		}
+
+		tags := []string{}
+		for _, tag := range part.Edges.Tags {
+			tags = append(tags, tag.Name)
+		}
+		fmt.Println(tags)
+
 		partDocument := typesense_wrapper.PartDocument{
 			ID:          strconv.Itoa(part.ID),
 			Name:        part.Name,
 			Description: part.Description,
+			Tags:        tags,
 		}
 		documentsToIndex = append(documentsToIndex, partDocument)
 	}
@@ -47,14 +62,14 @@ func syncPartsToTypesense(parts []*ent.Part) {
 func SyncBackgroundTask() {
 	for {
 		fmt.Println("Syncing in background...")
-		client, err := ent.Open("sqlite3", "file:///tmp/db.sqlite?_fk=1")
+		client, err := ent.Open("sqlite3", config.DBUri)
 		if err != nil {
 			log.Fatalf("failed opening connection to sqlite: %v", err)
 		}
 		ctx := context.Background()
 
-		// get all non-deleted parts that have been modified since the last sync
-		modifiedParts, err := client.Part.Query().Where(part.Deleted(false), part.UpdatedAtGT(time.Now().Add(SYNC_INTERVAL*-1))).All(ctx)
+		// get all parts that have been modified since the last sync
+		modifiedParts, err := client.Part.Query().Where(part.UpdatedAtGT(time.Now().Add(SYNC_INTERVAL * -1))).WithTags().All(ctx)
 		check(err)
 		fmt.Println("Modified parts:", modifiedParts)
 		syncPartsToTypesense(modifiedParts)
@@ -68,9 +83,13 @@ func SyncBackgroundTask() {
 		partCountTypesense := int(resp.NumDocuments)
 
 		if partCount != partCountTypesense {
-			fmt.Println("Integrity check failed, syncing all parts...")
-			parts, err := client.Part.Query().Where(part.Deleted(false)).All(ctx)
+			fmt.Println("Integrity check failed, deleting collection and syncing all parts...")
+			fmt.Println("Part count DB:", partCount, "Part count Typesense:", partCountTypesense)
+			parts, err := client.Part.Query().Where(part.Deleted(false)).WithTags().All(ctx)
 			check(err)
+			_, err = typesense_wrapper.TypesenseClient.Collection("parts").Delete()
+			check(err)
+			typesense_wrapper.InitTypesense()
 			syncPartsToTypesense(parts)
 		}
 

@@ -14,6 +14,8 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/property"
 	"github.com/niwla23/lagersystem/manager/ent/generated/tag"
+	"github.com/niwla23/lagersystem/manager/typesense_wrapper"
+	"github.com/typesense/typesense-go/typesense/api"
 )
 
 type PropertyAddData struct {
@@ -214,6 +216,35 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		parts, err := client.Part.Query().WithTags().WithProperties().All(ctx)
 		if err != nil {
 			return err
+		}
+
+		return c.JSON(parts)
+	})
+
+	router.Get("/search", func(c *fiber.Ctx) error {
+		query := c.Query("q")
+		filter := c.Query("filter")
+
+		filterBy := filter
+		searchResult, err := typesense_wrapper.TypesenseClient.Collection("parts").Documents().Search(&api.SearchCollectionParams{FilterBy: &filterBy, Q: query, QueryBy: "name,tags,description"})
+		if err != nil {
+			return err
+		}
+
+		parts := make([]*ent.Part, 0)
+		for _, hit := range *searchResult.Hits {
+			doc := *hit.Document
+			partId, err := strconv.Atoi(doc["id"].(string))
+			if err != nil {
+				return err
+			}
+
+			part, err := client.Part.Query().Where(part.ID(partId)).WithTags().WithProperties().Only(ctx)
+			if err != nil {
+				return err
+			}
+
+			parts = append(parts, part)
 		}
 
 		return c.JSON(parts)

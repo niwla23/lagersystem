@@ -10,9 +10,10 @@ import (
 var TypesenseClient *typesense.Client
 
 type PartDocument struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Tags        []string `json:"tags"`
 }
 
 func InitTypesense() {
@@ -40,6 +41,10 @@ func InitTypesense() {
 					{
 						Name: "description",
 						Type: "string",
+					},
+					{
+						Name: "tags",
+						Type: "string[]",
 					},
 				},
 			}

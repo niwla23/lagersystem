@@ -5,4 +5,4 @@ generate:
 	go generate ./ent
 
 dev:
-	STORAGE_PATH=/tmp DB_URI=file:///tmp/db.sqlite?_fk=1 go run main.go
+	STORAGE_PATH=./data/images DB_URI=file:///home/alwin/Dokumente/projects/lagersystem/software/manager/data/db.sqlite?_fk=1 go run main.go

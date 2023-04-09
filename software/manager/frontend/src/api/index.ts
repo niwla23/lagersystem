@@ -9,6 +9,11 @@ export async function getAllParts(): Promise<PartModel[]> {
   return await resp.json()
 }
 
+export async function searchParts(query: string, filter: string): Promise<PartModel[]> {
+  let resp = await fetch(`/api/parts/search?q=${query}`)
+  return await resp.json()
+}
+
 export async function createPart(data: CreatePartData, image: File | undefined) {
   console.log("creating:", data)
   let resp = await fetch("/api/parts", { method: "POST", body: JSON.stringify(data), headers: { "content-type": "application/json" } })
