@@ -1,12 +1,12 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faCheckCircle } from "@fortawesome/free-solid-svg-icons"
+import { faCamera, faCheckCircle } from "@fortawesome/free-solid-svg-icons"
 import { PropertyModel } from "../types"
 
 type Props = {
   id: number
   name: string
   description: string
-  imageUrl: string
+  imageUrl?: string
   tags: string[]
   properties: PropertyModel[]
   actionText: string
@@ -26,14 +26,22 @@ export default function PartCard(props: Props) {
     )
   })
 
+  let image = (
+    <div className="w-full h-full bg-base-300 p-16">
+      <FontAwesomeIcon icon={faCamera} size="4x" className="text-gray-300 w-full h-full" />
+    </div>
+  )
+    console.log(props.imageUrl)
+  if (props.imageUrl) {
+    image = <img className="h-full w-full object-contain bg-base-300" src={props.imageUrl} />
+  }
+
   return (
     <div className="card w-full bg-base-100 flex-col sm:flex-row ">
-      <figure className="sm:w-1/6 h-64 w-full">
-        <img className="h-full w-full object-contain bg-base-300" src={props.imageUrl} />
-      </figure>
-      <div className="card-body p-4 sm:p-6 sm:p">
+      <figure className="w-full sm:w-64 h-64 bg-base-300 shrink-0">{image}</figure>
+      <div className="card-body p-4 sm:p-6">
         <h2 className="card-title">{props.name}</h2>
-        <section className="flex gap-1">
+        <section className="flex gap-1 flex-wrap">
           {renderedTags}
           {renderedProperties}
         </section>

@@ -75,23 +75,6 @@ export default function PartAddDataForm(props: Props) {
           {...register("tags")}
         />
       </div>
-      <div>
-        <label className="label">
-          <span className="label-text">Box</span>
-        </label>
-        <input type="text" placeholder="Must be unique" className="input input-bordered w-full" {...register("box")} />
-      </div>
-      <div className="form-control w-full">
-        <label className="label">
-          <span className="label-text">Section</span>
-        </label>
-        <select className="select select-bordered" {...register("section")}>
-          <option disabled>Pick one</option>
-          <option>Section 1</option>
-          <option>Section 2</option>
-          <option>Section 3</option>
-        </select>
-      </div>
 
       <button onClick={handleSubmit(onSubmit)} className="btn btn-primary w-full mt-4">
         Store part

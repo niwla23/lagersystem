@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"path/filepath"
 	"strconv"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/property"
 	"github.com/niwla23/lagersystem/manager/ent/generated/tag"
+	"github.com/niwla23/lagersystem/manager/helpers"
 	"github.com/niwla23/lagersystem/manager/typesense_wrapper"
 	"github.com/typesense/typesense-go/typesense/api"
 )
@@ -213,7 +213,11 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 
 	router.Get("/", func(c *fiber.Ctx) error {
 		// get all parts from db
-		parts, err := client.Part.Query().WithTags().WithProperties().All(ctx)
+		parts, err := client.Part.Query().
+			WithTags().
+			WithProperties().
+			WithSection().
+			All(ctx)
 		if err != nil {
 			return err
 		}
@@ -281,6 +285,10 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			return err
 		}
 
-		return c.SendString("in another universe we would ask operator service to deliver box at position: " + fmt.Sprint(position.ID))
+		resp, err := helpers.DeliverBoxByPositionId(position.ID)
+		if err != nil {
+			return err
+		}
+		return c.JSON(resp)
 	})
 }

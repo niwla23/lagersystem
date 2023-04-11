@@ -22,9 +22,14 @@ export default function AddPart() {
   } else if (stage === "dataForm") {
     content = (
       <PartAddDataForm
-        submit={(form, image) => {
+        submit={async (form, image) => {
           setPartCreateData(form)
-          api.createPart(form, image)
+          try {
+            let e2 = await api.createPart(form, image)
+          } catch(e: any) {
+            alert(e.response.data.message)
+            return
+          }
           switch (partAddMode) {
             case "freeSection":
               setStage("getting")
@@ -57,7 +62,7 @@ export default function AddPart() {
     content = (
       <div className="h-full grid place-items-center">
         <div className="w-full">
-          <h2 className="font-bold text-xl">Storing part "{partCreateData?.partName}"...</h2>
+          <h2 className="font-bold text-xl">Storing part "{partCreateData?.name}"...</h2>
           <progress className="progress w-full"></progress>
         </div>
       </div>

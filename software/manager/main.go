@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,6 +14,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/niwla23/lagersystem/manager/config"
+	"github.com/niwla23/lagersystem/manager/database"
 	_ "github.com/niwla23/lagersystem/manager/ent/generated/runtime"
 	"github.com/niwla23/lagersystem/manager/typesense_sync"
 	"github.com/niwla23/lagersystem/manager/typesense_wrapper"
@@ -28,19 +28,20 @@ func main() {
 	config.LoadConfigFromEnvironment()
 
 	// client, err := ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
-	client, err := ent.Open("sqlite3", config.DBUri)
-	if err != nil {
-		log.Fatalf("failed opening connection to sqlite: %v", err)
-	}
-	defer client.Close()
+	// client, err := ent.Open("sqlite3", config.DBUri)
+	// if err != nil {
+	// 	log.Fatalf("failed opening connection to sqlite: %v", err)
+	// }
+	// defer client.Close()
+	database.InitDB()
 	ctx := context.Background()
 
 	typesense_wrapper.InitTypesense()
 
-	// Run the auto migration tool.
-	if err := client.Schema.Create(context.Background()); err != nil {
-		log.Fatalf("failed creating schema resources: %v", err)
-	}
+	// // Run the auto migration tool.
+	// if err := client.Schema.Create(context.Background()); err != nil {
+	// 	log.Fatalf("failed creating schema resources: %v", err)
+	// }
 
 	if !fiber.IsChild() {
 		go typesense_sync.SyncBackgroundTask()
@@ -92,19 +93,19 @@ func main() {
 	app.Static("/static", config.StoragePath)
 
 	partHandlers := app.Group("/parts")
-	handlers.RegisterPartRoutes(partHandlers, client, ctx)
+	handlers.RegisterPartRoutes(partHandlers, database.Client, ctx)
 
 	positionHandlers := app.Group("/positions")
-	handlers.RegisterPositionRoutes(positionHandlers, client, ctx)
+	handlers.RegisterPositionRoutes(positionHandlers, database.Client, ctx)
 
 	boxHandlers := app.Group("/boxes")
-	handlers.RegisterBoxRoutes(boxHandlers, client, ctx)
+	handlers.RegisterBoxRoutes(boxHandlers, database.Client, ctx)
 
 	storeHandlers := app.Group("/store")
-	handlers.RegisterStoreRoutes(storeHandlers, client, ctx)
+	handlers.RegisterStoreRoutes(storeHandlers, database.Client, ctx)
 
 	warehouseHandlers := app.Group("/warehouses")
-	handlers.RegisterWarehouseRoutes(warehouseHandlers, client, ctx)
+	handlers.RegisterWarehouseRoutes(warehouseHandlers, database.Client, ctx)
 
 	app.Listen(":3001")
 }

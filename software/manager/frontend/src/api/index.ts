@@ -1,6 +1,10 @@
+import axios from "axios"
 import { PartModel, CreatePartData } from "../types"
 
 export function getImageUrl(imageId: string) {
+  if (imageId === "00000000-0000-0000-0000-000000000000") {
+    return null
+  }
   return `/api/static/${imageId}`
 }
 
@@ -15,21 +19,34 @@ export async function searchParts(query: string, filter: string): Promise<PartMo
 }
 
 export async function createPart(data: CreatePartData, image: File | undefined) {
-  console.log("creating:", data)
-  let resp = await fetch("/api/parts", { method: "POST", body: JSON.stringify(data), headers: { "content-type": "application/json" } })
-  let partId: number = (await resp.json())["id"]
+  // let resp = await fetch("/api/parts", { method: "POST", body: JSON.stringify(data), headers: { "content-type": "application/json" } })
+  let resp = await axios.post("/api/parts", data)
+  let partId: number = (resp.data)["id"]
 
   if (!image) {
-    console.log("no image", image)
-    return
+    return resp
   }
   const formData = new FormData()
 
-  console.log(image)
   formData.append("image", image)
-  let respImage = await fetch(`/api/parts/${partId}/image`, {
-    method: "PUT",
-    body: formData,
-    // headers: { "content-type": `multipart/form-data; boundary=${formData.get}` },
-  })
+  let respImage = await axios.put(`/api/parts/${partId}/image`, formData)
+  return respImage
+}
+
+// todo: correct type
+export async function deliverPart(partId: number): Promise<object> {
+  let resp = await fetch(`/api/parts/${partId}/deliver`)
+  return await resp.json()
+}
+
+// todo: correct type
+export async function deliverBox(partId: number): Promise<object> {
+  let resp = await fetch(`/api/boxes/${partId}/deliver`)
+  return await resp.json()
+}
+
+// todo: correct type
+export async function storeBoxByScanner(): Promise<object> {
+  let resp = await fetch(`/api/store/by-scanner`)
+  return await resp.json()
 }
