@@ -1,7 +1,5 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faCheckCircle } from "@fortawesome/free-solid-svg-icons"
-
-export type AddMode = "freeSection" | "storeWithPart" | "storeOnly"
+// this component allows the user to choose how to store the newly added part.
+export type AddMode = "emptyBox" | "storeWithPart" | "storeOnly"
 
 let ModeCard = (props: { title: string; text: string; active: boolean; onClick: () => void }) => {
   return (
@@ -30,8 +28,8 @@ export default function PartAddMode(props: Props) {
         <ModeCard
           title="Give me a free section"
           text="The system will find an unused section and deliver the box for you to put in the part(s)"
-          active={props.modeChosen === "freeSection"}
-          onClick={() => props.setModeChosen("freeSection")}
+          active={props.modeChosen === "emptyBox"}
+          onClick={() => props.setModeChosen("emptyBox")}
         />
         <ModeCard
           title="I want to put this in the same section as another part"

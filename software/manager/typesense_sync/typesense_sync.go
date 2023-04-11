@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/niwla23/lagersystem/manager/config"
+	"github.com/niwla23/lagersystem/manager/database"
 	"github.com/niwla23/lagersystem/manager/typesense_wrapper"
 	"github.com/typesense/typesense-go/typesense/api"
 
@@ -32,6 +33,7 @@ func syncPartsToTypesense(parts []*ent.Part) {
 
 		if part.Deleted {
 			_, err := typesense_wrapper.TypesenseClient.Collection("parts").Document(strconv.Itoa(part.ID)).Delete()
+			database.Client.Part.DeleteOne(part).ExecX(context.Background())
 			check(err)
 			continue
 		}
@@ -73,7 +75,6 @@ func SyncBackgroundTask() {
 		check(err)
 		fmt.Println("Modified parts:", modifiedParts)
 		syncPartsToTypesense(modifiedParts)
-		// todo: handle deleted parts
 
 		// integrity check: check if part counts are equal
 		partCount, err := client.Part.Query().Where(part.Deleted(false)).Count(ctx)

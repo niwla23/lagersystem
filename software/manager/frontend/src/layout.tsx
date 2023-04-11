@@ -29,7 +29,7 @@ export default function Layout() {
           <LinkWithStyle to={"/boxes"}>Boxes</LinkWithStyle>
         </li>
         <li>
-          <LinkWithStyle to={"/about"}>About</LinkWithStyle>
+          <LinkWithStyle to={"/boxes/store"}>Store box</LinkWithStyle>
         </li>
         {/* <li>
           <a>

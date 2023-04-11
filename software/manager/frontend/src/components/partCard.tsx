@@ -9,8 +9,7 @@ type Props = {
   imageUrl?: string
   tags: string[]
   properties: PropertyModel[]
-  actionText: string
-  onActionClick: (id: number) => void
+  actions: JSX.Element[] | JSX.Element
 }
 
 export default function PartCard(props: Props) {
@@ -45,11 +44,9 @@ export default function PartCard(props: Props) {
           {renderedTags}
           {renderedProperties}
         </section>
-        <p>{props.description}</p>
+        <p className="whitespace-pre-wrap">{props.description}</p>
         <div className="card-actions justify-end">
-          <button className="btn btn-primary" onClick={() => props.onActionClick(props.id)}>
-            {props.actionText}
-          </button>
+          {props.actions}
         </div>
       </div>
     </div>

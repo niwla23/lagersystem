@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/config"
 	ent "github.com/niwla23/lagersystem/manager/ent/generated"
+	"github.com/niwla23/lagersystem/manager/ent/generated/box"
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/property"
 	"github.com/niwla23/lagersystem/manager/ent/generated/tag"
@@ -29,7 +30,7 @@ type PartAddData struct {
 	Amount      *int                       `json:"amount,omitempty"`
 	Tags        []string                   `json:"tags"`
 	Properties  map[string]PropertyAddData `json:"properties"`
-	BoxId       int                        `json:"boxId"`
+	BoxId       uuid.UUID                  `json:"boxId"`
 }
 
 func createOrGetTagsFromNameList(tagNames *[]string, client *ent.Client, ctx context.Context) ([]*ent.Tag, error) {
@@ -109,19 +110,27 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			return err
 		}
 
-		// get box by given ID
-		boxX, err := client.Box.Get(ctx, data.BoxId)
-		if err != nil {
-			return err
-		}
+		// // get box by given ID
+		// boxX, err := client.Box.Get(ctx, data.BoxId)
+		// if err != nil {
+		// 	return err
+		// }
 
-		partX, err := client.Part.Create().
+		builder := client.Part.Create().
 			SetName(data.Name).
 			SetDescription(data.Description).
 			SetAmount(amount).
-			SetBox(boxX).
-			AddTags(tags...).
-			Save(ctx)
+			AddTags(tags...)
+
+		if data.BoxId != uuid.Nil {
+			boxX, err := client.Box.Query().Where(box.BoxId(data.BoxId)).Only(ctx)
+			if err != nil {
+				return err
+			}
+			builder.SetBox(boxX)
+		}
+
+		partX, err := builder.Save(ctx)
 
 		if err != nil {
 			return err
@@ -169,21 +178,23 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			return err
 		}
 
-		// get box by given ID
-		boxX, err := client.Box.Get(ctx, data.BoxId)
-		if err != nil {
-			return err
-		}
-
 		// update part with request data
-		partX, err = partX.Update().
+		builder := partX.Update().
 			SetName(data.Name).
 			SetDescription(data.Description).
 			SetAmount(amount).
-			SetBox(boxX).
 			ClearTags().
-			AddTags(tags...).
-			Save(ctx)
+			AddTags(tags...)
+
+		if data.BoxId != uuid.Nil {
+			boxX, err := client.Box.Query().Where(box.BoxId(data.BoxId)).Only(ctx)
+			if err != nil {
+				return err
+			}
+			builder.SetBox(boxX)
+		}
+
+		partX, err = builder.Save(ctx)
 
 		if err != nil {
 			return err
@@ -239,6 +250,24 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		return c.JSON(parts)
 	})
 
+	router.Get("/:partId<int>", func(c *fiber.Ctx) error {
+		partId, _ := strconv.Atoi(c.Params("partId"))
+
+		// get all parts from db
+		parts, err := client.Part.Query().
+			Where(part.ID(partId)).
+			WithTags().
+			WithProperties().
+			WithBox().
+			Only(ctx)
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(parts)
+	})
+
 	router.Get("/search", func(c *fiber.Ctx) error {
 		query := c.Query("q")
 		filter := c.Query("filter")
@@ -262,6 +291,10 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 				return err
 			}
 
+			if part.Deleted {
+				continue
+			}
+
 			parts = append(parts, part)
 		}
 
@@ -271,13 +304,13 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 	router.Delete("/:partId<int>", func(c *fiber.Ctx) error {
 		partId, _ := strconv.Atoi(c.Params("partId"))
 
-		// parse request body
-		data := new(PartAddData)
-		if err := c.BodyParser(data); err != nil {
-			return err
-		}
-
-		partX, err := client.Part.UpdateOneID(partId).SetDeleted(true).Save(ctx)
+		partX, err := client.Part.
+			UpdateOneID(partId).
+			SetDeleted(true).
+			ClearBox().
+			ClearProperties().
+			ClearTags().
+			Save(ctx)
 
 		if err != nil {
 			return err

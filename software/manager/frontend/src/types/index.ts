@@ -14,6 +14,13 @@ export interface PropertyModel {
   type: "string" | "number" | "boolean"
 }
 
+export interface BoxModel {
+  id: number
+  createdAt: Date
+  updatedAt: Date
+  boxId: string
+}
+
 export interface PartModel {
   id: number
   name: string
@@ -22,6 +29,14 @@ export interface PartModel {
   properties?: PropertyModel[]
   amount: number
   imageId: string
+  box?: BoxModel
+}
+
+export interface StoreByScannerResponse {
+  status: string
+  boxId: string
+  positionID: number
+  duration: number
 }
 
 export interface PropertyAddData {
@@ -35,4 +50,14 @@ export interface CreatePartData {
   amount: number
   tags: string[]
   properties: { [key: string]: PropertyAddData }
+  boxId?: string
+}
+
+export interface UpdatePartData {
+  name: string
+  description: string
+  amount: number
+  tags: string[]
+  properties: { [key: string]: PropertyAddData }
+  boxId?: string
 }

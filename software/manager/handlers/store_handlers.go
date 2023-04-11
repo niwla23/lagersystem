@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,11 +16,21 @@ import (
 
 func RegisterStoreRoutes(router fiber.Router, client *ent_gen.Client, ctx context.Context) {
 	router.Post("/by-scanner", func(c *fiber.Ctx) error {
+		// try getting the box from db
 		boxX, err := helpers.GetBoxFromScanner()
-		if err != nil {
+
+		// if the box does not exist in the db, create it
+		target := &ent_gen.NotFoundError{}
+		if errors.As(err, &target) {
+			boxX, err = client.Box.Create().SetBoxId(boxX.BoxId).Save(ctx)
+			if err != nil {
+				return err
+			}
+		} else if err != nil {
 			return err
 		}
 
+		// find a position for the box
 		positionX, err := helpers.FindPosition(boxX)
 		if err != nil {
 			return err

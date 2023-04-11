@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -67,14 +66,16 @@ func RegisterBoxRoutes(router fiber.Router, client *ent.Client, ctx context.Cont
 		return c.JSON(boxX)
 	})
 
-	router.Post("/:boxId<int>/deliver", func(c *fiber.Ctx) error {
-		boxId, _ := strconv.Atoi(c.Params("boxId"))
+	router.Post("/:boxId/deliver", func(c *fiber.Ctx) error {
+		boxId, _ := uuid.Parse(c.Params("boxId"))
 
 		// get box from db
-		box, err := client.Box.Get(ctx, boxId)
+		box, err := client.Box.Query().Where(box.BoxId(boxId)).Only(ctx)
 		if err != nil {
 			return err
 		}
+
+		// get position of box from db
 		position, err := box.QueryPosition().Only(ctx)
 		if err != nil {
 			return err

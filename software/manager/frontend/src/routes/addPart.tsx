@@ -1,60 +1,88 @@
 import React, { useState } from "react"
-import PartAddDataForm, {AddPartDataForm} from "../components/partAddDataForm"
+import PartAddDataForm, { AddPartDataForm } from "../components/partAddDataForm"
 import ChoosePartAddMode, { AddMode } from "../components/partAddMode"
 import PartAddSearch from "../components/partAddSearch"
-import { CreatePartData } from "../types"
+import { CreatePartData, UpdatePartData } from "../types"
 import * as api from "../api"
-
+import { useNavigate } from "react-router-dom"
 
 export default function AddPart() {
+  const navigate = useNavigate()
   type AddStage = "selectMode" | "dataForm" | "searchPart" | "getting" | "storing" | "confirmPutPartIn"
 
   const [stage, setStage] = useState<AddStage>("selectMode")
-  const [partAddMode, setPartAddMode] = useState<AddMode>("freeSection")
+  const [partAddMode, setPartAddMode] = useState<AddMode>("emptyBox")
   const [partCreateData, setPartCreateData] = useState<CreatePartData | null>(null)
+  const [partId, setPartId] = useState<number | null>(null)
 
+  const deliverBoxForPutIn = async (boxId: string) => {
+    setStage("getting")
+    await api.deliverBox(boxId)
+    setStage("confirmPutPartIn")
+  }
+
+  const storeBox = async () => {
+    setStage("storing")
+    const resp = await api.storeBoxByScanner()
+    if (!partId) {
+      alert("partId not set")
+      return
+    }
+    await api.updatePart(partId, { ...(partCreateData as UpdatePartData), boxId: resp.boxId }, undefined)
+    alert("successfully stored box")
+    navigate("/")
+  }
+
+  const submitForm = async (form: CreatePartData, image: File | undefined) => {
+    // save form data for later and create part in the database. Do not yet assign a box
+    setPartCreateData(form)
+    try {
+      const resp = await api.createPart(form, image)
+      setPartId(resp.id)
+    } catch (e: any) {
+      alert(e.response.data.message)
+      return
+    }
+
+    switch (partAddMode) {
+      case "emptyBox":
+        // user wants to store part in an empty box, find one and deliver it
+        try {
+          const emptyBox = await api.getEmptyBox()
+          console.log(emptyBox)
+          deliverBoxForPutIn(emptyBox.boxId)
+        } catch (e) {
+          alert("no free box found")
+          navigate("/")
+          return
+        }
+        break
+
+      case "storeWithPart":
+        // send user to search mask to find the part to store the new part with
+        setStage("searchPart")
+        break
+
+      case "storeOnly":
+        // user already has the box in their hands and just wants to store the box and assign it to the part
+        setStage("confirmPutPartIn")
+        break
+    }
+  }
 
   let content = <div></div>
   if (stage === "selectMode") {
     content = <ChoosePartAddMode modeChosen={partAddMode} setModeChosen={setPartAddMode} submit={() => setStage("dataForm")} />
   } else if (stage === "searchPart") {
-    content = content = <PartAddSearch submit={() => setStage("getting")} />
+    content = content = <PartAddSearch submit={() => deliverBoxForPutIn(1)} />
   } else if (stage === "dataForm") {
-    content = (
-      <PartAddDataForm
-        submit={async (form, image) => {
-          setPartCreateData(form)
-          try {
-            let e2 = await api.createPart(form, image)
-          } catch(e: any) {
-            alert(e.response.data.message)
-            return
-          }
-          switch (partAddMode) {
-            case "freeSection":
-              setStage("getting")
-              break
-
-            case "storeWithPart":
-              setStage("searchPart")
-              break
-
-            case "storeOnly":
-              setStage("confirmPutPartIn")
-              break
-          }
-        }}
-      />
-    )
+    content = <PartAddDataForm submit={submitForm} />
   } else if (stage === "getting") {
     content = (
       <div className="h-full grid place-items-center">
         <div className="w-full">
           <h2 className="font-bold text-xl">Getting box...</h2>
           <progress className="progress w-full"></progress>
-          <button className="btn btn-error" onClick={() => setStage("confirmPutPartIn")}>
-            Done (to be automated)
-          </button>
         </div>
       </div>
     )
@@ -71,8 +99,8 @@ export default function AddPart() {
     content = (
       <div className="h-full grid place-items-center">
         <div className="w-min flex flex-col gap-2 justify-center">
-          <h2 className="font-bold text-xl text-center whitespace-nowrap">Please put the parts in the box</h2>
-          <button className="btn btn-warning whitespace-nowrap" onClick={() => setStage("storing")}>
+          <h2 className="font-bold text-xl text-center whitespace-nowrap">Please put the parts in the box and place it on the scanner</h2>
+          <button className="btn btn-warning whitespace-nowrap" onClick={() => storeBox()}>
             Store box now
           </button>
         </div>
