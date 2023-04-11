@@ -53,7 +53,7 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "box" package.
 	BoxInverseTable = "boxes"
 	// BoxColumn is the table column denoting the box relation/edge.
-	BoxColumn = "part_box"
+	BoxColumn = "box_parts"
 )
 
 // Columns holds all SQL columns for part fields.
@@ -72,7 +72,6 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"box_parts",
-	"part_box",
 }
 
 var (

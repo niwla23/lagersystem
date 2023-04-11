@@ -39,7 +39,7 @@ func RegisterBoxRoutes(router fiber.Router, client *ent.Client, ctx context.Cont
 
 	router.Get("/", func(c *fiber.Ctx) error {
 		// get all boxes from db
-		boxes, err := client.Box.Query().WithPosition().All(ctx)
+		boxes, err := client.Box.Query().WithPosition().WithParts().All(ctx)
 		if err != nil {
 			return err
 		}

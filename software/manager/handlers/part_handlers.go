@@ -109,10 +109,17 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			return err
 		}
 
+		// get box by given ID
+		boxX, err := client.Box.Get(ctx, data.BoxId)
+		if err != nil {
+			return err
+		}
+
 		partX, err := client.Part.Create().
 			SetName(data.Name).
 			SetDescription(data.Description).
 			SetAmount(amount).
+			SetBox(boxX).
 			AddTags(tags...).
 			Save(ctx)
 
@@ -162,11 +169,18 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			return err
 		}
 
+		// get box by given ID
+		boxX, err := client.Box.Get(ctx, data.BoxId)
+		if err != nil {
+			return err
+		}
+
 		// update part with request data
 		partX, err = partX.Update().
 			SetName(data.Name).
 			SetDescription(data.Description).
 			SetAmount(amount).
+			SetBox(boxX).
 			ClearTags().
 			AddTags(tags...).
 			Save(ctx)

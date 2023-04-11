@@ -32,7 +32,6 @@ var (
 		{Name: "amount", Type: field.TypeInt, Default: -1},
 		{Name: "image_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "box_parts", Type: field.TypeInt, Nullable: true},
-		{Name: "part_box", Type: field.TypeInt, Nullable: true},
 	}
 	// PartsTable holds the schema information for the "parts" table.
 	PartsTable = &schema.Table{
@@ -43,12 +42,6 @@ var (
 			{
 				Symbol:     "parts_boxes_parts",
 				Columns:    []*schema.Column{PartsColumns[8]},
-				RefColumns: []*schema.Column{BoxesColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:     "parts_boxes_box",
-				Columns:    []*schema.Column{PartsColumns[9]},
 				RefColumns: []*schema.Column{BoxesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -183,7 +176,6 @@ var (
 
 func init() {
 	PartsTable.ForeignKeys[0].RefTable = BoxesTable
-	PartsTable.ForeignKeys[1].RefTable = BoxesTable
 	PositionsTable.ForeignKeys[0].RefTable = BoxesTable
 	PositionsTable.ForeignKeys[1].RefTable = WarehousesTable
 	PropertiesTable.ForeignKeys[0].RefTable = PartsTable

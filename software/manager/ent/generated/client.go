@@ -473,7 +473,7 @@ func (c *PartClient) QueryBox(pa *Part) *BoxQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(part.Table, part.FieldID, id),
 			sqlgraph.To(box.Table, box.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, part.BoxTable, part.BoxColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, part.BoxTable, part.BoxColumn),
 		)
 		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
 		return fromV, nil

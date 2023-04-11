@@ -460,7 +460,7 @@ func HasBox() predicate.Part {
 	return predicate.Part(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, BoxTable, BoxColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, BoxTable, BoxColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -472,7 +472,7 @@ func HasBoxWith(preds ...predicate.Box) predicate.Part {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(BoxInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, BoxTable, BoxColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, BoxTable, BoxColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

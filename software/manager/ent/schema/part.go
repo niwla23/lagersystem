@@ -36,7 +36,7 @@ func (Part) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("tags", Tag.Type),
 		edge.To("properties", Property.Type),
-		edge.To("box", Box.Type).Unique(),
+		edge.From("box", Box.Type).Ref("parts").Unique(),
 	}
 }
 

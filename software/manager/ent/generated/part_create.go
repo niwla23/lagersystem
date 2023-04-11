@@ -343,7 +343,7 @@ func (pc *PartCreate) createSpec() (*Part, *sqlgraph.CreateSpec) {
 	if nodes := pc.mutation.BoxIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
-			Inverse: false,
+			Inverse: true,
 			Table:   part.BoxTable,
 			Columns: []string{part.BoxColumn},
 			Bidi:    false,
@@ -357,7 +357,7 @@ func (pc *PartCreate) createSpec() (*Part, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.part_box = &nodes[0]
+		_node.box_parts = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

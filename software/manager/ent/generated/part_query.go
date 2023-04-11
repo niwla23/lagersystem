@@ -123,7 +123,7 @@ func (pq *PartQuery) QueryBox() *BoxQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(part.Table, part.FieldID, selector),
 			sqlgraph.To(box.Table, box.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, part.BoxTable, part.BoxColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, part.BoxTable, part.BoxColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -591,10 +591,10 @@ func (pq *PartQuery) loadBox(ctx context.Context, query *BoxQuery, nodes []*Part
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*Part)
 	for i := range nodes {
-		if nodes[i].part_box == nil {
+		if nodes[i].box_parts == nil {
 			continue
 		}
-		fk := *nodes[i].part_box
+		fk := *nodes[i].box_parts
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -611,7 +611,7 @@ func (pq *PartQuery) loadBox(ctx context.Context, query *BoxQuery, nodes []*Part
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "part_box" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "box_parts" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

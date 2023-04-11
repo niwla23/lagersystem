@@ -425,7 +425,7 @@ func (pu *PartUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if pu.mutation.BoxCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
-			Inverse: false,
+			Inverse: true,
 			Table:   part.BoxTable,
 			Columns: []string{part.BoxColumn},
 			Bidi:    false,
@@ -441,7 +441,7 @@ func (pu *PartUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := pu.mutation.BoxIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
-			Inverse: false,
+			Inverse: true,
 			Table:   part.BoxTable,
 			Columns: []string{part.BoxColumn},
 			Bidi:    false,
@@ -894,7 +894,7 @@ func (puo *PartUpdateOne) sqlSave(ctx context.Context) (_node *Part, err error) 
 	if puo.mutation.BoxCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
-			Inverse: false,
+			Inverse: true,
 			Table:   part.BoxTable,
 			Columns: []string{part.BoxColumn},
 			Bidi:    false,
@@ -910,7 +910,7 @@ func (puo *PartUpdateOne) sqlSave(ctx context.Context) (_node *Part, err error) 
 	if nodes := puo.mutation.BoxIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
-			Inverse: false,
+			Inverse: true,
 			Table:   part.BoxTable,
 			Columns: []string{part.BoxColumn},
 			Bidi:    false,
