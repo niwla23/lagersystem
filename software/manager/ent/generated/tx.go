@@ -20,8 +20,6 @@ type Tx struct {
 	Position *PositionClient
 	// Property is the client for interacting with the Property builders.
 	Property *PropertyClient
-	// Section is the client for interacting with the Section builders.
-	Section *SectionClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
 	// Warehouse is the client for interacting with the Warehouse builders.
@@ -161,7 +159,6 @@ func (tx *Tx) init() {
 	tx.Part = NewPartClient(tx.config)
 	tx.Position = NewPositionClient(tx.config)
 	tx.Property = NewPropertyClient(tx.config)
-	tx.Section = NewSectionClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
 	tx.Warehouse = NewWarehouseClient(tx.config)
 }

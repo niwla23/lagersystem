@@ -10,8 +10,8 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	"github.com/niwla23/lagersystem/manager/ent/generated/box"
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
-	"github.com/niwla23/lagersystem/manager/ent/generated/section"
 )
 
 // Part is the model entity for the Part schema.
@@ -35,8 +35,9 @@ type Part struct {
 	ImageId uuid.UUID `json:"imageId,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PartQuery when eager-loading is set.
-	Edges        PartEdges `json:"-"`
-	part_section *int
+	Edges     PartEdges `json:"-"`
+	box_parts *int
+	part_box  *int
 }
 
 // PartEdges holds the relations/edges for other nodes in the graph.
@@ -45,8 +46,8 @@ type PartEdges struct {
 	Tags []*Tag `json:"tags,omitempty"`
 	// Properties holds the value of the properties edge.
 	Properties []*Property `json:"properties,omitempty"`
-	// Section holds the value of the section edge.
-	Section *Section `json:"section,omitempty"`
+	// Box holds the value of the box edge.
+	Box *Box `json:"box,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [3]bool
@@ -70,17 +71,17 @@ func (e PartEdges) PropertiesOrErr() ([]*Property, error) {
 	return nil, &NotLoadedError{edge: "properties"}
 }
 
-// SectionOrErr returns the Section value or an error if the edge
+// BoxOrErr returns the Box value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e PartEdges) SectionOrErr() (*Section, error) {
+func (e PartEdges) BoxOrErr() (*Box, error) {
 	if e.loadedTypes[2] {
-		if e.Section == nil {
+		if e.Box == nil {
 			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: section.Label}
+			return nil, &NotFoundError{label: box.Label}
 		}
-		return e.Section, nil
+		return e.Box, nil
 	}
-	return nil, &NotLoadedError{edge: "section"}
+	return nil, &NotLoadedError{edge: "box"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -98,7 +99,9 @@ func (*Part) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullTime)
 		case part.FieldImageId:
 			values[i] = new(uuid.UUID)
-		case part.ForeignKeys[0]: // part_section
+		case part.ForeignKeys[0]: // box_parts
+			values[i] = new(sql.NullInt64)
+		case part.ForeignKeys[1]: // part_box
 			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Part", columns[i])
@@ -165,10 +168,17 @@ func (pa *Part) assignValues(columns []string, values []any) error {
 			}
 		case part.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field part_section", value)
+				return fmt.Errorf("unexpected type %T for edge-field box_parts", value)
 			} else if value.Valid {
-				pa.part_section = new(int)
-				*pa.part_section = int(value.Int64)
+				pa.box_parts = new(int)
+				*pa.box_parts = int(value.Int64)
+			}
+		case part.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field part_box", value)
+			} else if value.Valid {
+				pa.part_box = new(int)
+				*pa.part_box = int(value.Int64)
 			}
 		}
 	}
@@ -185,9 +195,9 @@ func (pa *Part) QueryProperties() *PropertyQuery {
 	return NewPartClient(pa.config).QueryProperties(pa)
 }
 
-// QuerySection queries the "section" edge of the Part entity.
-func (pa *Part) QuerySection() *SectionQuery {
-	return NewPartClient(pa.config).QuerySection(pa)
+// QueryBox queries the "box" edge of the Part entity.
+func (pa *Part) QueryBox() *BoxQuery {
+	return NewPartClient(pa.config).QueryBox(pa)
 }
 
 // Update returns a builder for updating this Part.

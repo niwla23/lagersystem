@@ -9,7 +9,6 @@ import (
 	ent "github.com/niwla23/lagersystem/manager/ent/generated"
 	"github.com/niwla23/lagersystem/manager/ent/generated/box"
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
-	"github.com/niwla23/lagersystem/manager/ent/generated/section"
 	"github.com/niwla23/lagersystem/manager/ent/generated/warehouse"
 	"github.com/niwla23/lagersystem/manager/helpers"
 )
@@ -51,7 +50,7 @@ func RegisterBoxRoutes(router fiber.Router, client *ent.Client, ctx context.Cont
 	router.Get("/get-free-box", func(c *fiber.Ctx) error {
 		box, err := client.Box.Query(). // query a box
 						Where(box.HasPositionWith(position.HasWarehouseWith(warehouse.ID(1)))). // that is currently stored in warehouse 1
-						Where(box.Not(box.HasSectionsWith(section.HasParts()))).                // that has no parts in it
+						Where(box.Not(box.HasParts())).                                         // that has no parts in it
 						WithPosition().                                                         // include the position of the box
 						Only(ctx)                                                               // get the first result
 		if err != nil {

@@ -12,10 +12,10 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/niwla23/lagersystem/manager/ent/generated/box"
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/predicate"
 	"github.com/niwla23/lagersystem/manager/ent/generated/property"
-	"github.com/niwla23/lagersystem/manager/ent/generated/section"
 	"github.com/niwla23/lagersystem/manager/ent/generated/tag"
 )
 
@@ -157,23 +157,23 @@ func (pu *PartUpdate) AddProperties(p ...*Property) *PartUpdate {
 	return pu.AddPropertyIDs(ids...)
 }
 
-// SetSectionID sets the "section" edge to the Section entity by ID.
-func (pu *PartUpdate) SetSectionID(id int) *PartUpdate {
-	pu.mutation.SetSectionID(id)
+// SetBoxID sets the "box" edge to the Box entity by ID.
+func (pu *PartUpdate) SetBoxID(id int) *PartUpdate {
+	pu.mutation.SetBoxID(id)
 	return pu
 }
 
-// SetNillableSectionID sets the "section" edge to the Section entity by ID if the given value is not nil.
-func (pu *PartUpdate) SetNillableSectionID(id *int) *PartUpdate {
+// SetNillableBoxID sets the "box" edge to the Box entity by ID if the given value is not nil.
+func (pu *PartUpdate) SetNillableBoxID(id *int) *PartUpdate {
 	if id != nil {
-		pu = pu.SetSectionID(*id)
+		pu = pu.SetBoxID(*id)
 	}
 	return pu
 }
 
-// SetSection sets the "section" edge to the Section entity.
-func (pu *PartUpdate) SetSection(s *Section) *PartUpdate {
-	return pu.SetSectionID(s.ID)
+// SetBox sets the "box" edge to the Box entity.
+func (pu *PartUpdate) SetBox(b *Box) *PartUpdate {
+	return pu.SetBoxID(b.ID)
 }
 
 // Mutation returns the PartMutation object of the builder.
@@ -223,9 +223,9 @@ func (pu *PartUpdate) RemoveProperties(p ...*Property) *PartUpdate {
 	return pu.RemovePropertyIDs(ids...)
 }
 
-// ClearSection clears the "section" edge to the Section entity.
-func (pu *PartUpdate) ClearSection() *PartUpdate {
-	pu.mutation.ClearSection()
+// ClearBox clears the "box" edge to the Box entity.
+func (pu *PartUpdate) ClearBox() *PartUpdate {
+	pu.mutation.ClearBox()
 	return pu
 }
 
@@ -422,33 +422,33 @@ func (pu *PartUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if pu.mutation.SectionCleared() {
+	if pu.mutation.BoxCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   part.SectionTable,
-			Columns: []string{part.SectionColumn},
+			Table:   part.BoxTable,
+			Columns: []string{part.BoxColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: section.FieldID,
+					Column: box.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.SectionIDs(); len(nodes) > 0 {
+	if nodes := pu.mutation.BoxIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   part.SectionTable,
-			Columns: []string{part.SectionColumn},
+			Table:   part.BoxTable,
+			Columns: []string{part.BoxColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: section.FieldID,
+					Column: box.FieldID,
 				},
 			},
 		}
@@ -602,23 +602,23 @@ func (puo *PartUpdateOne) AddProperties(p ...*Property) *PartUpdateOne {
 	return puo.AddPropertyIDs(ids...)
 }
 
-// SetSectionID sets the "section" edge to the Section entity by ID.
-func (puo *PartUpdateOne) SetSectionID(id int) *PartUpdateOne {
-	puo.mutation.SetSectionID(id)
+// SetBoxID sets the "box" edge to the Box entity by ID.
+func (puo *PartUpdateOne) SetBoxID(id int) *PartUpdateOne {
+	puo.mutation.SetBoxID(id)
 	return puo
 }
 
-// SetNillableSectionID sets the "section" edge to the Section entity by ID if the given value is not nil.
-func (puo *PartUpdateOne) SetNillableSectionID(id *int) *PartUpdateOne {
+// SetNillableBoxID sets the "box" edge to the Box entity by ID if the given value is not nil.
+func (puo *PartUpdateOne) SetNillableBoxID(id *int) *PartUpdateOne {
 	if id != nil {
-		puo = puo.SetSectionID(*id)
+		puo = puo.SetBoxID(*id)
 	}
 	return puo
 }
 
-// SetSection sets the "section" edge to the Section entity.
-func (puo *PartUpdateOne) SetSection(s *Section) *PartUpdateOne {
-	return puo.SetSectionID(s.ID)
+// SetBox sets the "box" edge to the Box entity.
+func (puo *PartUpdateOne) SetBox(b *Box) *PartUpdateOne {
+	return puo.SetBoxID(b.ID)
 }
 
 // Mutation returns the PartMutation object of the builder.
@@ -668,9 +668,9 @@ func (puo *PartUpdateOne) RemoveProperties(p ...*Property) *PartUpdateOne {
 	return puo.RemovePropertyIDs(ids...)
 }
 
-// ClearSection clears the "section" edge to the Section entity.
-func (puo *PartUpdateOne) ClearSection() *PartUpdateOne {
-	puo.mutation.ClearSection()
+// ClearBox clears the "box" edge to the Box entity.
+func (puo *PartUpdateOne) ClearBox() *PartUpdateOne {
+	puo.mutation.ClearBox()
 	return puo
 }
 
@@ -891,33 +891,33 @@ func (puo *PartUpdateOne) sqlSave(ctx context.Context) (_node *Part, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if puo.mutation.SectionCleared() {
+	if puo.mutation.BoxCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   part.SectionTable,
-			Columns: []string{part.SectionColumn},
+			Table:   part.BoxTable,
+			Columns: []string{part.BoxColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: section.FieldID,
+					Column: box.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.SectionIDs(); len(nodes) > 0 {
+	if nodes := puo.mutation.BoxIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   part.SectionTable,
-			Columns: []string{part.SectionColumn},
+			Table:   part.BoxTable,
+			Columns: []string{part.BoxColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: section.FieldID,
+					Column: box.FieldID,
 				},
 			},
 		}

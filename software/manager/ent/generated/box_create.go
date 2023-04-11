@@ -12,8 +12,8 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/box"
+	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
-	"github.com/niwla23/lagersystem/manager/ent/generated/section"
 )
 
 // BoxCreate is the builder for creating a Box entity.
@@ -57,19 +57,19 @@ func (bc *BoxCreate) SetBoxId(u uuid.UUID) *BoxCreate {
 	return bc
 }
 
-// AddSectionIDs adds the "sections" edge to the Section entity by IDs.
-func (bc *BoxCreate) AddSectionIDs(ids ...int) *BoxCreate {
-	bc.mutation.AddSectionIDs(ids...)
+// AddPartIDs adds the "parts" edge to the Part entity by IDs.
+func (bc *BoxCreate) AddPartIDs(ids ...int) *BoxCreate {
+	bc.mutation.AddPartIDs(ids...)
 	return bc
 }
 
-// AddSections adds the "sections" edges to the Section entity.
-func (bc *BoxCreate) AddSections(s ...*Section) *BoxCreate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// AddParts adds the "parts" edges to the Part entity.
+func (bc *BoxCreate) AddParts(p ...*Part) *BoxCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
 	}
-	return bc.AddSectionIDs(ids...)
+	return bc.AddPartIDs(ids...)
 }
 
 // SetPositionID sets the "position" edge to the Position entity by ID.
@@ -200,17 +200,17 @@ func (bc *BoxCreate) createSpec() (*Box, *sqlgraph.CreateSpec) {
 		_spec.SetField(box.FieldBoxId, field.TypeUUID, value)
 		_node.BoxId = value
 	}
-	if nodes := bc.mutation.SectionsIDs(); len(nodes) > 0 {
+	if nodes := bc.mutation.PartsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   box.SectionsTable,
-			Columns: []string{box.SectionsColumn},
+			Table:   box.PartsTable,
+			Columns: []string{box.PartsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: section.FieldID,
+					Column: part.FieldID,
 				},
 			},
 		}

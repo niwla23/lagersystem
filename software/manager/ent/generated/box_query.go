@@ -12,9 +12,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/niwla23/lagersystem/manager/ent/generated/box"
+	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
 	"github.com/niwla23/lagersystem/manager/ent/generated/predicate"
-	"github.com/niwla23/lagersystem/manager/ent/generated/section"
 )
 
 // BoxQuery is the builder for querying Box entities.
@@ -24,7 +24,7 @@ type BoxQuery struct {
 	order        []OrderFunc
 	inters       []Interceptor
 	predicates   []predicate.Box
-	withSections *SectionQuery
+	withParts    *PartQuery
 	withPosition *PositionQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -62,9 +62,9 @@ func (bq *BoxQuery) Order(o ...OrderFunc) *BoxQuery {
 	return bq
 }
 
-// QuerySections chains the current query on the "sections" edge.
-func (bq *BoxQuery) QuerySections() *SectionQuery {
-	query := (&SectionClient{config: bq.config}).Query()
+// QueryParts chains the current query on the "parts" edge.
+func (bq *BoxQuery) QueryParts() *PartQuery {
+	query := (&PartClient{config: bq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := bq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -75,8 +75,8 @@ func (bq *BoxQuery) QuerySections() *SectionQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(box.Table, box.FieldID, selector),
-			sqlgraph.To(section.Table, section.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, box.SectionsTable, box.SectionsColumn),
+			sqlgraph.To(part.Table, part.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, box.PartsTable, box.PartsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
 		return fromU, nil
@@ -296,7 +296,7 @@ func (bq *BoxQuery) Clone() *BoxQuery {
 		order:        append([]OrderFunc{}, bq.order...),
 		inters:       append([]Interceptor{}, bq.inters...),
 		predicates:   append([]predicate.Box{}, bq.predicates...),
-		withSections: bq.withSections.Clone(),
+		withParts:    bq.withParts.Clone(),
 		withPosition: bq.withPosition.Clone(),
 		// clone intermediate query.
 		sql:  bq.sql.Clone(),
@@ -304,14 +304,14 @@ func (bq *BoxQuery) Clone() *BoxQuery {
 	}
 }
 
-// WithSections tells the query-builder to eager-load the nodes that are connected to
-// the "sections" edge. The optional arguments are used to configure the query builder of the edge.
-func (bq *BoxQuery) WithSections(opts ...func(*SectionQuery)) *BoxQuery {
-	query := (&SectionClient{config: bq.config}).Query()
+// WithParts tells the query-builder to eager-load the nodes that are connected to
+// the "parts" edge. The optional arguments are used to configure the query builder of the edge.
+func (bq *BoxQuery) WithParts(opts ...func(*PartQuery)) *BoxQuery {
+	query := (&PartClient{config: bq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	bq.withSections = query
+	bq.withParts = query
 	return bq
 }
 
@@ -405,7 +405,7 @@ func (bq *BoxQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Box, err
 		nodes       = []*Box{}
 		_spec       = bq.querySpec()
 		loadedTypes = [2]bool{
-			bq.withSections != nil,
+			bq.withParts != nil,
 			bq.withPosition != nil,
 		}
 	)
@@ -427,10 +427,10 @@ func (bq *BoxQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Box, err
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := bq.withSections; query != nil {
-		if err := bq.loadSections(ctx, query, nodes,
-			func(n *Box) { n.Edges.Sections = []*Section{} },
-			func(n *Box, e *Section) { n.Edges.Sections = append(n.Edges.Sections, e) }); err != nil {
+	if query := bq.withParts; query != nil {
+		if err := bq.loadParts(ctx, query, nodes,
+			func(n *Box) { n.Edges.Parts = []*Part{} },
+			func(n *Box, e *Part) { n.Edges.Parts = append(n.Edges.Parts, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -443,7 +443,7 @@ func (bq *BoxQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Box, err
 	return nodes, nil
 }
 
-func (bq *BoxQuery) loadSections(ctx context.Context, query *SectionQuery, nodes []*Box, init func(*Box), assign func(*Box, *Section)) error {
+func (bq *BoxQuery) loadParts(ctx context.Context, query *PartQuery, nodes []*Box, init func(*Box), assign func(*Box, *Part)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int]*Box)
 	for i := range nodes {
@@ -454,21 +454,21 @@ func (bq *BoxQuery) loadSections(ctx context.Context, query *SectionQuery, nodes
 		}
 	}
 	query.withFKs = true
-	query.Where(predicate.Section(func(s *sql.Selector) {
-		s.Where(sql.InValues(box.SectionsColumn, fks...))
+	query.Where(predicate.Part(func(s *sql.Selector) {
+		s.Where(sql.InValues(box.PartsColumn, fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.box_sections
+		fk := n.box_parts
 		if fk == nil {
-			return fmt.Errorf(`foreign-key "box_sections" is nil for node %v`, n.ID)
+			return fmt.Errorf(`foreign-key "box_parts" is nil for node %v`, n.ID)
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "box_sections" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "box_parts" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

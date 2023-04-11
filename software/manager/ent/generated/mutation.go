@@ -15,7 +15,6 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
 	"github.com/niwla23/lagersystem/manager/ent/generated/predicate"
 	"github.com/niwla23/lagersystem/manager/ent/generated/property"
-	"github.com/niwla23/lagersystem/manager/ent/generated/section"
 	"github.com/niwla23/lagersystem/manager/ent/generated/tag"
 	"github.com/niwla23/lagersystem/manager/ent/generated/warehouse"
 
@@ -36,7 +35,6 @@ const (
 	TypePart      = "Part"
 	TypePosition  = "Position"
 	TypeProperty  = "Property"
-	TypeSection   = "Section"
 	TypeTag       = "Tag"
 	TypeWarehouse = "Warehouse"
 )
@@ -51,9 +49,9 @@ type BoxMutation struct {
 	updatedAt       *time.Time
 	boxId           *uuid.UUID
 	clearedFields   map[string]struct{}
-	sections        map[int]struct{}
-	removedsections map[int]struct{}
-	clearedsections bool
+	parts           map[int]struct{}
+	removedparts    map[int]struct{}
+	clearedparts    bool
 	position        *int
 	clearedposition bool
 	done            bool
@@ -267,58 +265,58 @@ func (m *BoxMutation) ResetBoxId() {
 	m.boxId = nil
 }
 
-// AddSectionIDs adds the "sections" edge to the Section entity by ids.
-func (m *BoxMutation) AddSectionIDs(ids ...int) {
-	if m.sections == nil {
-		m.sections = make(map[int]struct{})
+// AddPartIDs adds the "parts" edge to the Part entity by ids.
+func (m *BoxMutation) AddPartIDs(ids ...int) {
+	if m.parts == nil {
+		m.parts = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.sections[ids[i]] = struct{}{}
+		m.parts[ids[i]] = struct{}{}
 	}
 }
 
-// ClearSections clears the "sections" edge to the Section entity.
-func (m *BoxMutation) ClearSections() {
-	m.clearedsections = true
+// ClearParts clears the "parts" edge to the Part entity.
+func (m *BoxMutation) ClearParts() {
+	m.clearedparts = true
 }
 
-// SectionsCleared reports if the "sections" edge to the Section entity was cleared.
-func (m *BoxMutation) SectionsCleared() bool {
-	return m.clearedsections
+// PartsCleared reports if the "parts" edge to the Part entity was cleared.
+func (m *BoxMutation) PartsCleared() bool {
+	return m.clearedparts
 }
 
-// RemoveSectionIDs removes the "sections" edge to the Section entity by IDs.
-func (m *BoxMutation) RemoveSectionIDs(ids ...int) {
-	if m.removedsections == nil {
-		m.removedsections = make(map[int]struct{})
+// RemovePartIDs removes the "parts" edge to the Part entity by IDs.
+func (m *BoxMutation) RemovePartIDs(ids ...int) {
+	if m.removedparts == nil {
+		m.removedparts = make(map[int]struct{})
 	}
 	for i := range ids {
-		delete(m.sections, ids[i])
-		m.removedsections[ids[i]] = struct{}{}
+		delete(m.parts, ids[i])
+		m.removedparts[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedSections returns the removed IDs of the "sections" edge to the Section entity.
-func (m *BoxMutation) RemovedSectionsIDs() (ids []int) {
-	for id := range m.removedsections {
+// RemovedParts returns the removed IDs of the "parts" edge to the Part entity.
+func (m *BoxMutation) RemovedPartsIDs() (ids []int) {
+	for id := range m.removedparts {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// SectionsIDs returns the "sections" edge IDs in the mutation.
-func (m *BoxMutation) SectionsIDs() (ids []int) {
-	for id := range m.sections {
+// PartsIDs returns the "parts" edge IDs in the mutation.
+func (m *BoxMutation) PartsIDs() (ids []int) {
+	for id := range m.parts {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetSections resets all changes to the "sections" edge.
-func (m *BoxMutation) ResetSections() {
-	m.sections = nil
-	m.clearedsections = false
-	m.removedsections = nil
+// ResetParts resets all changes to the "parts" edge.
+func (m *BoxMutation) ResetParts() {
+	m.parts = nil
+	m.clearedparts = false
+	m.removedparts = nil
 }
 
 // SetPositionID sets the "position" edge to the Position entity by id.
@@ -528,8 +526,8 @@ func (m *BoxMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BoxMutation) AddedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.sections != nil {
-		edges = append(edges, box.EdgeSections)
+	if m.parts != nil {
+		edges = append(edges, box.EdgeParts)
 	}
 	if m.position != nil {
 		edges = append(edges, box.EdgePosition)
@@ -541,9 +539,9 @@ func (m *BoxMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *BoxMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case box.EdgeSections:
-		ids := make([]ent.Value, 0, len(m.sections))
-		for id := range m.sections {
+	case box.EdgeParts:
+		ids := make([]ent.Value, 0, len(m.parts))
+		for id := range m.parts {
 			ids = append(ids, id)
 		}
 		return ids
@@ -558,8 +556,8 @@ func (m *BoxMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BoxMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.removedsections != nil {
-		edges = append(edges, box.EdgeSections)
+	if m.removedparts != nil {
+		edges = append(edges, box.EdgeParts)
 	}
 	return edges
 }
@@ -568,9 +566,9 @@ func (m *BoxMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *BoxMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case box.EdgeSections:
-		ids := make([]ent.Value, 0, len(m.removedsections))
-		for id := range m.removedsections {
+	case box.EdgeParts:
+		ids := make([]ent.Value, 0, len(m.removedparts))
+		for id := range m.removedparts {
 			ids = append(ids, id)
 		}
 		return ids
@@ -581,8 +579,8 @@ func (m *BoxMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BoxMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.clearedsections {
-		edges = append(edges, box.EdgeSections)
+	if m.clearedparts {
+		edges = append(edges, box.EdgeParts)
 	}
 	if m.clearedposition {
 		edges = append(edges, box.EdgePosition)
@@ -594,8 +592,8 @@ func (m *BoxMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *BoxMutation) EdgeCleared(name string) bool {
 	switch name {
-	case box.EdgeSections:
-		return m.clearedsections
+	case box.EdgeParts:
+		return m.clearedparts
 	case box.EdgePosition:
 		return m.clearedposition
 	}
@@ -617,8 +615,8 @@ func (m *BoxMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *BoxMutation) ResetEdge(name string) error {
 	switch name {
-	case box.EdgeSections:
-		m.ResetSections()
+	case box.EdgeParts:
+		m.ResetParts()
 		return nil
 	case box.EdgePosition:
 		m.ResetPosition()
@@ -648,8 +646,8 @@ type PartMutation struct {
 	properties        map[int]struct{}
 	removedproperties map[int]struct{}
 	clearedproperties bool
-	section           *int
-	clearedsection    bool
+	box               *int
+	clearedbox        bool
 	done              bool
 	oldValue          func(context.Context) (*Part, error)
 	predicates        []predicate.Part
@@ -1146,43 +1144,43 @@ func (m *PartMutation) ResetProperties() {
 	m.removedproperties = nil
 }
 
-// SetSectionID sets the "section" edge to the Section entity by id.
-func (m *PartMutation) SetSectionID(id int) {
-	m.section = &id
+// SetBoxID sets the "box" edge to the Box entity by id.
+func (m *PartMutation) SetBoxID(id int) {
+	m.box = &id
 }
 
-// ClearSection clears the "section" edge to the Section entity.
-func (m *PartMutation) ClearSection() {
-	m.clearedsection = true
+// ClearBox clears the "box" edge to the Box entity.
+func (m *PartMutation) ClearBox() {
+	m.clearedbox = true
 }
 
-// SectionCleared reports if the "section" edge to the Section entity was cleared.
-func (m *PartMutation) SectionCleared() bool {
-	return m.clearedsection
+// BoxCleared reports if the "box" edge to the Box entity was cleared.
+func (m *PartMutation) BoxCleared() bool {
+	return m.clearedbox
 }
 
-// SectionID returns the "section" edge ID in the mutation.
-func (m *PartMutation) SectionID() (id int, exists bool) {
-	if m.section != nil {
-		return *m.section, true
+// BoxID returns the "box" edge ID in the mutation.
+func (m *PartMutation) BoxID() (id int, exists bool) {
+	if m.box != nil {
+		return *m.box, true
 	}
 	return
 }
 
-// SectionIDs returns the "section" edge IDs in the mutation.
+// BoxIDs returns the "box" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// SectionID instead. It exists only for internal usage by the builders.
-func (m *PartMutation) SectionIDs() (ids []int) {
-	if id := m.section; id != nil {
+// BoxID instead. It exists only for internal usage by the builders.
+func (m *PartMutation) BoxIDs() (ids []int) {
+	if id := m.box; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetSection resets all changes to the "section" edge.
-func (m *PartMutation) ResetSection() {
-	m.section = nil
-	m.clearedsection = false
+// ResetBox resets all changes to the "box" edge.
+func (m *PartMutation) ResetBox() {
+	m.box = nil
+	m.clearedbox = false
 }
 
 // Where appends a list predicates to the PartMutation builder.
@@ -1451,8 +1449,8 @@ func (m *PartMutation) AddedEdges() []string {
 	if m.properties != nil {
 		edges = append(edges, part.EdgeProperties)
 	}
-	if m.section != nil {
-		edges = append(edges, part.EdgeSection)
+	if m.box != nil {
+		edges = append(edges, part.EdgeBox)
 	}
 	return edges
 }
@@ -1473,8 +1471,8 @@ func (m *PartMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case part.EdgeSection:
-		if id := m.section; id != nil {
+	case part.EdgeBox:
+		if id := m.box; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -1522,8 +1520,8 @@ func (m *PartMutation) ClearedEdges() []string {
 	if m.clearedproperties {
 		edges = append(edges, part.EdgeProperties)
 	}
-	if m.clearedsection {
-		edges = append(edges, part.EdgeSection)
+	if m.clearedbox {
+		edges = append(edges, part.EdgeBox)
 	}
 	return edges
 }
@@ -1536,8 +1534,8 @@ func (m *PartMutation) EdgeCleared(name string) bool {
 		return m.clearedtags
 	case part.EdgeProperties:
 		return m.clearedproperties
-	case part.EdgeSection:
-		return m.clearedsection
+	case part.EdgeBox:
+		return m.clearedbox
 	}
 	return false
 }
@@ -1546,8 +1544,8 @@ func (m *PartMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *PartMutation) ClearEdge(name string) error {
 	switch name {
-	case part.EdgeSection:
-		m.ClearSection()
+	case part.EdgeBox:
+		m.ClearBox()
 		return nil
 	}
 	return fmt.Errorf("unknown Part unique edge %s", name)
@@ -1563,8 +1561,8 @@ func (m *PartMutation) ResetEdge(name string) error {
 	case part.EdgeProperties:
 		m.ResetProperties()
 		return nil
-	case part.EdgeSection:
-		m.ResetSection()
+	case part.EdgeBox:
+		m.ResetBox()
 		return nil
 	}
 	return fmt.Errorf("unknown Part edge %s", name)
@@ -2773,538 +2771,6 @@ func (m *PropertyMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Property edge %s", name)
-}
-
-// SectionMutation represents an operation that mutates the Section nodes in the graph.
-type SectionMutation struct {
-	config
-	op            Op
-	typ           string
-	id            *int
-	createdAt     *time.Time
-	updatedAt     *time.Time
-	clearedFields map[string]struct{}
-	box           *int
-	clearedbox    bool
-	parts         map[int]struct{}
-	removedparts  map[int]struct{}
-	clearedparts  bool
-	done          bool
-	oldValue      func(context.Context) (*Section, error)
-	predicates    []predicate.Section
-}
-
-var _ ent.Mutation = (*SectionMutation)(nil)
-
-// sectionOption allows management of the mutation configuration using functional options.
-type sectionOption func(*SectionMutation)
-
-// newSectionMutation creates new mutation for the Section entity.
-func newSectionMutation(c config, op Op, opts ...sectionOption) *SectionMutation {
-	m := &SectionMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeSection,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withSectionID sets the ID field of the mutation.
-func withSectionID(id int) sectionOption {
-	return func(m *SectionMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *Section
-		)
-		m.oldValue = func(ctx context.Context) (*Section, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().Section.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withSection sets the old Section of the mutation.
-func withSection(node *Section) sectionOption {
-	return func(m *SectionMutation) {
-		m.oldValue = func(context.Context) (*Section, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m SectionMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m SectionMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, errors.New("generated: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *SectionMutation) ID() (id int, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *SectionMutation) IDs(ctx context.Context) ([]int, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []int{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().Section.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetCreatedAt sets the "createdAt" field.
-func (m *SectionMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
-}
-
-// CreatedAt returns the value of the "createdAt" field in the mutation.
-func (m *SectionMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "createdAt" field's value of the Section entity.
-// If the Section object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SectionMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "createdAt" field.
-func (m *SectionMutation) ResetCreatedAt() {
-	m.createdAt = nil
-}
-
-// SetUpdatedAt sets the "updatedAt" field.
-func (m *SectionMutation) SetUpdatedAt(t time.Time) {
-	m.updatedAt = &t
-}
-
-// UpdatedAt returns the value of the "updatedAt" field in the mutation.
-func (m *SectionMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updatedAt
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldUpdatedAt returns the old "updatedAt" field's value of the Section entity.
-// If the Section object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SectionMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
-	}
-	return oldValue.UpdatedAt, nil
-}
-
-// ResetUpdatedAt resets all changes to the "updatedAt" field.
-func (m *SectionMutation) ResetUpdatedAt() {
-	m.updatedAt = nil
-}
-
-// SetBoxID sets the "box" edge to the Box entity by id.
-func (m *SectionMutation) SetBoxID(id int) {
-	m.box = &id
-}
-
-// ClearBox clears the "box" edge to the Box entity.
-func (m *SectionMutation) ClearBox() {
-	m.clearedbox = true
-}
-
-// BoxCleared reports if the "box" edge to the Box entity was cleared.
-func (m *SectionMutation) BoxCleared() bool {
-	return m.clearedbox
-}
-
-// BoxID returns the "box" edge ID in the mutation.
-func (m *SectionMutation) BoxID() (id int, exists bool) {
-	if m.box != nil {
-		return *m.box, true
-	}
-	return
-}
-
-// BoxIDs returns the "box" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// BoxID instead. It exists only for internal usage by the builders.
-func (m *SectionMutation) BoxIDs() (ids []int) {
-	if id := m.box; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetBox resets all changes to the "box" edge.
-func (m *SectionMutation) ResetBox() {
-	m.box = nil
-	m.clearedbox = false
-}
-
-// AddPartIDs adds the "parts" edge to the Part entity by ids.
-func (m *SectionMutation) AddPartIDs(ids ...int) {
-	if m.parts == nil {
-		m.parts = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.parts[ids[i]] = struct{}{}
-	}
-}
-
-// ClearParts clears the "parts" edge to the Part entity.
-func (m *SectionMutation) ClearParts() {
-	m.clearedparts = true
-}
-
-// PartsCleared reports if the "parts" edge to the Part entity was cleared.
-func (m *SectionMutation) PartsCleared() bool {
-	return m.clearedparts
-}
-
-// RemovePartIDs removes the "parts" edge to the Part entity by IDs.
-func (m *SectionMutation) RemovePartIDs(ids ...int) {
-	if m.removedparts == nil {
-		m.removedparts = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.parts, ids[i])
-		m.removedparts[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedParts returns the removed IDs of the "parts" edge to the Part entity.
-func (m *SectionMutation) RemovedPartsIDs() (ids []int) {
-	for id := range m.removedparts {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// PartsIDs returns the "parts" edge IDs in the mutation.
-func (m *SectionMutation) PartsIDs() (ids []int) {
-	for id := range m.parts {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetParts resets all changes to the "parts" edge.
-func (m *SectionMutation) ResetParts() {
-	m.parts = nil
-	m.clearedparts = false
-	m.removedparts = nil
-}
-
-// Where appends a list predicates to the SectionMutation builder.
-func (m *SectionMutation) Where(ps ...predicate.Section) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// WhereP appends storage-level predicates to the SectionMutation builder. Using this method,
-// users can use type-assertion to append predicates that do not depend on any generated package.
-func (m *SectionMutation) WhereP(ps ...func(*sql.Selector)) {
-	p := make([]predicate.Section, len(ps))
-	for i := range ps {
-		p[i] = ps[i]
-	}
-	m.Where(p...)
-}
-
-// Op returns the operation name.
-func (m *SectionMutation) Op() Op {
-	return m.op
-}
-
-// SetOp allows setting the mutation operation.
-func (m *SectionMutation) SetOp(op Op) {
-	m.op = op
-}
-
-// Type returns the node type of this mutation (Section).
-func (m *SectionMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *SectionMutation) Fields() []string {
-	fields := make([]string, 0, 2)
-	if m.createdAt != nil {
-		fields = append(fields, section.FieldCreatedAt)
-	}
-	if m.updatedAt != nil {
-		fields = append(fields, section.FieldUpdatedAt)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *SectionMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case section.FieldCreatedAt:
-		return m.CreatedAt()
-	case section.FieldUpdatedAt:
-		return m.UpdatedAt()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *SectionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case section.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
-	case section.FieldUpdatedAt:
-		return m.OldUpdatedAt(ctx)
-	}
-	return nil, fmt.Errorf("unknown Section field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *SectionMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case section.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
-	case section.FieldUpdatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUpdatedAt(v)
-		return nil
-	}
-	return fmt.Errorf("unknown Section field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *SectionMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *SectionMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *SectionMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown Section numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *SectionMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *SectionMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *SectionMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown Section nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *SectionMutation) ResetField(name string) error {
-	switch name {
-	case section.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
-	case section.FieldUpdatedAt:
-		m.ResetUpdatedAt()
-		return nil
-	}
-	return fmt.Errorf("unknown Section field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *SectionMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
-	if m.box != nil {
-		edges = append(edges, section.EdgeBox)
-	}
-	if m.parts != nil {
-		edges = append(edges, section.EdgeParts)
-	}
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *SectionMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case section.EdgeBox:
-		if id := m.box; id != nil {
-			return []ent.Value{*id}
-		}
-	case section.EdgeParts:
-		ids := make([]ent.Value, 0, len(m.parts))
-		for id := range m.parts {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *SectionMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
-	if m.removedparts != nil {
-		edges = append(edges, section.EdgeParts)
-	}
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *SectionMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case section.EdgeParts:
-		ids := make([]ent.Value, 0, len(m.removedparts))
-		for id := range m.removedparts {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *SectionMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
-	if m.clearedbox {
-		edges = append(edges, section.EdgeBox)
-	}
-	if m.clearedparts {
-		edges = append(edges, section.EdgeParts)
-	}
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *SectionMutation) EdgeCleared(name string) bool {
-	switch name {
-	case section.EdgeBox:
-		return m.clearedbox
-	case section.EdgeParts:
-		return m.clearedparts
-	}
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *SectionMutation) ClearEdge(name string) error {
-	switch name {
-	case section.EdgeBox:
-		m.ClearBox()
-		return nil
-	}
-	return fmt.Errorf("unknown Section unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *SectionMutation) ResetEdge(name string) error {
-	switch name {
-	case section.EdgeBox:
-		m.ResetBox()
-		return nil
-	case section.EdgeParts:
-		m.ResetParts()
-		return nil
-	}
-	return fmt.Errorf("unknown Section edge %s", name)
 }
 
 // TagMutation represents an operation that mutates the Tag nodes in the graph.

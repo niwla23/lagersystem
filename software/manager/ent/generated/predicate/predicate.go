@@ -18,9 +18,6 @@ type Position func(*sql.Selector)
 // Property is the predicate function for property builders.
 type Property func(*sql.Selector)
 
-// Section is the predicate function for section builders.
-type Section func(*sql.Selector)
-
 // Tag is the predicate function for tag builders.
 type Tag func(*sql.Selector)
 

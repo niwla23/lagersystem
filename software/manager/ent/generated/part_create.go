@@ -11,9 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/niwla23/lagersystem/manager/ent/generated/box"
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/property"
-	"github.com/niwla23/lagersystem/manager/ent/generated/section"
 	"github.com/niwla23/lagersystem/manager/ent/generated/tag"
 )
 
@@ -136,23 +136,23 @@ func (pc *PartCreate) AddProperties(p ...*Property) *PartCreate {
 	return pc.AddPropertyIDs(ids...)
 }
 
-// SetSectionID sets the "section" edge to the Section entity by ID.
-func (pc *PartCreate) SetSectionID(id int) *PartCreate {
-	pc.mutation.SetSectionID(id)
+// SetBoxID sets the "box" edge to the Box entity by ID.
+func (pc *PartCreate) SetBoxID(id int) *PartCreate {
+	pc.mutation.SetBoxID(id)
 	return pc
 }
 
-// SetNillableSectionID sets the "section" edge to the Section entity by ID if the given value is not nil.
-func (pc *PartCreate) SetNillableSectionID(id *int) *PartCreate {
+// SetNillableBoxID sets the "box" edge to the Box entity by ID if the given value is not nil.
+func (pc *PartCreate) SetNillableBoxID(id *int) *PartCreate {
 	if id != nil {
-		pc = pc.SetSectionID(*id)
+		pc = pc.SetBoxID(*id)
 	}
 	return pc
 }
 
-// SetSection sets the "section" edge to the Section entity.
-func (pc *PartCreate) SetSection(s *Section) *PartCreate {
-	return pc.SetSectionID(s.ID)
+// SetBox sets the "box" edge to the Box entity.
+func (pc *PartCreate) SetBox(b *Box) *PartCreate {
+	return pc.SetBoxID(b.ID)
 }
 
 // Mutation returns the PartMutation object of the builder.
@@ -340,24 +340,24 @@ func (pc *PartCreate) createSpec() (*Part, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := pc.mutation.SectionIDs(); len(nodes) > 0 {
+	if nodes := pc.mutation.BoxIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   part.SectionTable,
-			Columns: []string{part.SectionColumn},
+			Table:   part.BoxTable,
+			Columns: []string{part.BoxColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: section.FieldID,
+					Column: box.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.part_section = &nodes[0]
+		_node.part_box = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

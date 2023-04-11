@@ -31,7 +31,8 @@ var (
 		{Name: "description", Type: field.TypeString},
 		{Name: "amount", Type: field.TypeInt, Default: -1},
 		{Name: "image_id", Type: field.TypeUUID, Nullable: true},
-		{Name: "part_section", Type: field.TypeInt, Nullable: true},
+		{Name: "box_parts", Type: field.TypeInt, Nullable: true},
+		{Name: "part_box", Type: field.TypeInt, Nullable: true},
 	}
 	// PartsTable holds the schema information for the "parts" table.
 	PartsTable = &schema.Table{
@@ -40,9 +41,15 @@ var (
 		PrimaryKey: []*schema.Column{PartsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "parts_sections_section",
+				Symbol:     "parts_boxes_parts",
 				Columns:    []*schema.Column{PartsColumns[8]},
-				RefColumns: []*schema.Column{SectionsColumns[0]},
+				RefColumns: []*schema.Column{BoxesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "parts_boxes_box",
+				Columns:    []*schema.Column{PartsColumns[9]},
+				RefColumns: []*schema.Column{BoxesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -96,27 +103,6 @@ var (
 				Symbol:     "properties_parts_properties",
 				Columns:    []*schema.Column{PropertiesColumns[6]},
 				RefColumns: []*schema.Column{PartsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
-	}
-	// SectionsColumns holds the columns for the "sections" table.
-	SectionsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "box_sections", Type: field.TypeInt, Nullable: true},
-	}
-	// SectionsTable holds the schema information for the "sections" table.
-	SectionsTable = &schema.Table{
-		Name:       "sections",
-		Columns:    SectionsColumns,
-		PrimaryKey: []*schema.Column{SectionsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "sections_boxes_sections",
-				Columns:    []*schema.Column{SectionsColumns[3]},
-				RefColumns: []*schema.Column{BoxesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -189,7 +175,6 @@ var (
 		PartsTable,
 		PositionsTable,
 		PropertiesTable,
-		SectionsTable,
 		TagsTable,
 		WarehousesTable,
 		PartTagsTable,
@@ -197,11 +182,11 @@ var (
 )
 
 func init() {
-	PartsTable.ForeignKeys[0].RefTable = SectionsTable
+	PartsTable.ForeignKeys[0].RefTable = BoxesTable
+	PartsTable.ForeignKeys[1].RefTable = BoxesTable
 	PositionsTable.ForeignKeys[0].RefTable = BoxesTable
 	PositionsTable.ForeignKeys[1].RefTable = WarehousesTable
 	PropertiesTable.ForeignKeys[0].RefTable = PartsTable
-	SectionsTable.ForeignKeys[0].RefTable = BoxesTable
 	TagsTable.ForeignKeys[0].RefTable = TagsTable
 	PartTagsTable.ForeignKeys[0].RefTable = PartsTable
 	PartTagsTable.ForeignKeys[1].RefTable = TagsTable

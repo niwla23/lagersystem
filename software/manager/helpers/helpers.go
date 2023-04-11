@@ -34,7 +34,7 @@ func GetBoxFromScanner() (*ent.Box, error) {
 	json.Unmarshal(body, data)
 
 	// get boxX from db
-	boxX, err := database.Client.Box.Query().Where(box.BoxId(data.BoxId)).WithPosition().WithSections().Only(ctx)
+	boxX, err := database.Client.Box.Query().Where(box.BoxId(data.BoxId)).WithPosition().WithParts().Only(ctx)
 	if err != nil {
 		return nil, err
 	}

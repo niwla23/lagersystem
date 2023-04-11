@@ -29,7 +29,7 @@ func (Box) Fields() []ent.Field {
 // Edges of the Box.
 func (Box) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("sections", Section.Type),
+		edge.To("parts", Part.Type),
 		edge.To("position", Position.Type).Unique().StructTag(`json:"position"`),
 	}
 }

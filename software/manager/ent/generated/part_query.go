@@ -11,10 +11,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/niwla23/lagersystem/manager/ent/generated/box"
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/predicate"
 	"github.com/niwla23/lagersystem/manager/ent/generated/property"
-	"github.com/niwla23/lagersystem/manager/ent/generated/section"
 	"github.com/niwla23/lagersystem/manager/ent/generated/tag"
 )
 
@@ -27,7 +27,7 @@ type PartQuery struct {
 	predicates     []predicate.Part
 	withTags       *TagQuery
 	withProperties *PropertyQuery
-	withSection    *SectionQuery
+	withBox        *BoxQuery
 	withFKs        bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -109,9 +109,9 @@ func (pq *PartQuery) QueryProperties() *PropertyQuery {
 	return query
 }
 
-// QuerySection chains the current query on the "section" edge.
-func (pq *PartQuery) QuerySection() *SectionQuery {
-	query := (&SectionClient{config: pq.config}).Query()
+// QueryBox chains the current query on the "box" edge.
+func (pq *PartQuery) QueryBox() *BoxQuery {
+	query := (&BoxClient{config: pq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -122,8 +122,8 @@ func (pq *PartQuery) QuerySection() *SectionQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(part.Table, part.FieldID, selector),
-			sqlgraph.To(section.Table, section.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, part.SectionTable, part.SectionColumn),
+			sqlgraph.To(box.Table, box.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, part.BoxTable, part.BoxColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -323,7 +323,7 @@ func (pq *PartQuery) Clone() *PartQuery {
 		predicates:     append([]predicate.Part{}, pq.predicates...),
 		withTags:       pq.withTags.Clone(),
 		withProperties: pq.withProperties.Clone(),
-		withSection:    pq.withSection.Clone(),
+		withBox:        pq.withBox.Clone(),
 		// clone intermediate query.
 		sql:  pq.sql.Clone(),
 		path: pq.path,
@@ -352,14 +352,14 @@ func (pq *PartQuery) WithProperties(opts ...func(*PropertyQuery)) *PartQuery {
 	return pq
 }
 
-// WithSection tells the query-builder to eager-load the nodes that are connected to
-// the "section" edge. The optional arguments are used to configure the query builder of the edge.
-func (pq *PartQuery) WithSection(opts ...func(*SectionQuery)) *PartQuery {
-	query := (&SectionClient{config: pq.config}).Query()
+// WithBox tells the query-builder to eager-load the nodes that are connected to
+// the "box" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *PartQuery) WithBox(opts ...func(*BoxQuery)) *PartQuery {
+	query := (&BoxClient{config: pq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	pq.withSection = query
+	pq.withBox = query
 	return pq
 }
 
@@ -445,10 +445,10 @@ func (pq *PartQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Part, e
 		loadedTypes = [3]bool{
 			pq.withTags != nil,
 			pq.withProperties != nil,
-			pq.withSection != nil,
+			pq.withBox != nil,
 		}
 	)
-	if pq.withSection != nil {
+	if pq.withBox != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -486,9 +486,9 @@ func (pq *PartQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Part, e
 			return nil, err
 		}
 	}
-	if query := pq.withSection; query != nil {
-		if err := pq.loadSection(ctx, query, nodes, nil,
-			func(n *Part, e *Section) { n.Edges.Section = e }); err != nil {
+	if query := pq.withBox; query != nil {
+		if err := pq.loadBox(ctx, query, nodes, nil,
+			func(n *Part, e *Box) { n.Edges.Box = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -587,14 +587,14 @@ func (pq *PartQuery) loadProperties(ctx context.Context, query *PropertyQuery, n
 	}
 	return nil
 }
-func (pq *PartQuery) loadSection(ctx context.Context, query *SectionQuery, nodes []*Part, init func(*Part), assign func(*Part, *Section)) error {
+func (pq *PartQuery) loadBox(ctx context.Context, query *BoxQuery, nodes []*Part, init func(*Part), assign func(*Part, *Box)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*Part)
 	for i := range nodes {
-		if nodes[i].part_section == nil {
+		if nodes[i].part_box == nil {
 			continue
 		}
-		fk := *nodes[i].part_section
+		fk := *nodes[i].part_box
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -603,7 +603,7 @@ func (pq *PartQuery) loadSection(ctx context.Context, query *SectionQuery, nodes
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(section.IDIn(ids...))
+	query.Where(box.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -611,7 +611,7 @@ func (pq *PartQuery) loadSection(ctx context.Context, query *SectionQuery, nodes
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "part_section" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "part_box" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

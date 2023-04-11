@@ -19,19 +19,19 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldBoxId holds the string denoting the boxid field in the database.
 	FieldBoxId = "box_id"
-	// EdgeSections holds the string denoting the sections edge name in mutations.
-	EdgeSections = "sections"
+	// EdgeParts holds the string denoting the parts edge name in mutations.
+	EdgeParts = "parts"
 	// EdgePosition holds the string denoting the position edge name in mutations.
 	EdgePosition = "position"
 	// Table holds the table name of the box in the database.
 	Table = "boxes"
-	// SectionsTable is the table that holds the sections relation/edge.
-	SectionsTable = "sections"
-	// SectionsInverseTable is the table name for the Section entity.
-	// It exists in this package in order to avoid circular dependency with the "section" package.
-	SectionsInverseTable = "sections"
-	// SectionsColumn is the table column denoting the sections relation/edge.
-	SectionsColumn = "box_sections"
+	// PartsTable is the table that holds the parts relation/edge.
+	PartsTable = "parts"
+	// PartsInverseTable is the table name for the Part entity.
+	// It exists in this package in order to avoid circular dependency with the "part" package.
+	PartsInverseTable = "parts"
+	// PartsColumn is the table column denoting the parts relation/edge.
+	PartsColumn = "box_parts"
 	// PositionTable is the table that holds the position relation/edge.
 	PositionTable = "positions"
 	// PositionInverseTable is the table name for the Position entity.

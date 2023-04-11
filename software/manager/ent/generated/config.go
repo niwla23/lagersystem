@@ -31,7 +31,6 @@ type (
 		Part      []ent.Hook
 		Position  []ent.Hook
 		Property  []ent.Hook
-		Section   []ent.Hook
 		Tag       []ent.Hook
 		Warehouse []ent.Hook
 	}
@@ -40,7 +39,6 @@ type (
 		Part      []ent.Interceptor
 		Position  []ent.Interceptor
 		Property  []ent.Interceptor
-		Section   []ent.Interceptor
 		Tag       []ent.Interceptor
 		Warehouse []ent.Interceptor
 	}

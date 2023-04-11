@@ -216,7 +216,7 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		parts, err := client.Part.Query().
 			WithTags().
 			WithProperties().
-			WithSection().
+			WithBox().
 			All(ctx)
 		if err != nil {
 			return err
@@ -280,7 +280,8 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		if err != nil {
 			return err
 		}
-		position, err := part.QuerySection().QueryBox().QueryPosition().Only(ctx)
+
+		position, err := part.QueryBox().QueryPosition().Only(ctx) //.QuerySection().QueryBox().QueryPosition().Only(ctx)
 		if err != nil {
 			return err
 		}

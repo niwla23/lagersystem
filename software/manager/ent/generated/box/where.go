@@ -191,24 +191,24 @@ func BoxIdLTE(v uuid.UUID) predicate.Box {
 	return predicate.Box(sql.FieldLTE(FieldBoxId, v))
 }
 
-// HasSections applies the HasEdge predicate on the "sections" edge.
-func HasSections() predicate.Box {
+// HasParts applies the HasEdge predicate on the "parts" edge.
+func HasParts() predicate.Box {
 	return predicate.Box(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, SectionsTable, SectionsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, PartsTable, PartsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasSectionsWith applies the HasEdge predicate on the "sections" edge with a given conditions (other predicates).
-func HasSectionsWith(preds ...predicate.Section) predicate.Box {
+// HasPartsWith applies the HasEdge predicate on the "parts" edge with a given conditions (other predicates).
+func HasPartsWith(preds ...predicate.Part) predicate.Box {
 	return predicate.Box(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(SectionsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, SectionsTable, SectionsColumn),
+			sqlgraph.To(PartsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PartsTable, PartsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

@@ -9,7 +9,6 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
 	"github.com/niwla23/lagersystem/manager/ent/generated/property"
-	"github.com/niwla23/lagersystem/manager/ent/generated/section"
 	"github.com/niwla23/lagersystem/manager/ent/generated/tag"
 	"github.com/niwla23/lagersystem/manager/ent/generated/warehouse"
 	"github.com/niwla23/lagersystem/manager/ent/schema"
@@ -96,18 +95,6 @@ func init() {
 	propertyDescType := propertyFields[4].Descriptor()
 	// property.TypeValidator is a validator for the "type" field. It is called by the builders before save.
 	property.TypeValidator = propertyDescType.Validators[0].(func(string) error)
-	sectionHooks := schema.Section{}.Hooks()
-	section.Hooks[0] = sectionHooks[0]
-	sectionFields := schema.Section{}.Fields()
-	_ = sectionFields
-	// sectionDescCreatedAt is the schema descriptor for createdAt field.
-	sectionDescCreatedAt := sectionFields[0].Descriptor()
-	// section.DefaultCreatedAt holds the default value on creation for the createdAt field.
-	section.DefaultCreatedAt = sectionDescCreatedAt.Default.(func() time.Time)
-	// sectionDescUpdatedAt is the schema descriptor for updatedAt field.
-	sectionDescUpdatedAt := sectionFields[1].Descriptor()
-	// section.DefaultUpdatedAt holds the default value on creation for the updatedAt field.
-	section.DefaultUpdatedAt = sectionDescUpdatedAt.Default.(func() time.Time)
 	tagHooks := schema.Tag{}.Hooks()
 	tag.Hooks[0] = tagHooks[0]
 	tagFields := schema.Tag{}.Fields()

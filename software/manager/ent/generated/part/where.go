@@ -455,24 +455,24 @@ func HasPropertiesWith(preds ...predicate.Property) predicate.Part {
 	})
 }
 
-// HasSection applies the HasEdge predicate on the "section" edge.
-func HasSection() predicate.Part {
+// HasBox applies the HasEdge predicate on the "box" edge.
+func HasBox() predicate.Part {
 	return predicate.Part(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, SectionTable, SectionColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, BoxTable, BoxColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasSectionWith applies the HasEdge predicate on the "section" edge with a given conditions (other predicates).
-func HasSectionWith(preds ...predicate.Section) predicate.Part {
+// HasBoxWith applies the HasEdge predicate on the "box" edge with a given conditions (other predicates).
+func HasBoxWith(preds ...predicate.Box) predicate.Part {
 	return predicate.Part(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(SectionInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, SectionTable, SectionColumn),
+			sqlgraph.To(BoxInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, BoxTable, BoxColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

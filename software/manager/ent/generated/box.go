@@ -32,8 +32,8 @@ type Box struct {
 
 // BoxEdges holds the relations/edges for other nodes in the graph.
 type BoxEdges struct {
-	// Sections holds the value of the sections edge.
-	Sections []*Section `json:"sections,omitempty"`
+	// Parts holds the value of the parts edge.
+	Parts []*Part `json:"parts,omitempty"`
 	// Position holds the value of the position edge.
 	Position *Position `json:"position"`
 	// loadedTypes holds the information for reporting if a
@@ -41,13 +41,13 @@ type BoxEdges struct {
 	loadedTypes [2]bool
 }
 
-// SectionsOrErr returns the Sections value or an error if the edge
+// PartsOrErr returns the Parts value or an error if the edge
 // was not loaded in eager-loading.
-func (e BoxEdges) SectionsOrErr() ([]*Section, error) {
+func (e BoxEdges) PartsOrErr() ([]*Part, error) {
 	if e.loadedTypes[0] {
-		return e.Sections, nil
+		return e.Parts, nil
 	}
-	return nil, &NotLoadedError{edge: "sections"}
+	return nil, &NotLoadedError{edge: "parts"}
 }
 
 // PositionOrErr returns the Position value or an error if the edge
@@ -118,9 +118,9 @@ func (b *Box) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// QuerySections queries the "sections" edge of the Box entity.
-func (b *Box) QuerySections() *SectionQuery {
-	return NewBoxClient(b.config).QuerySections(b)
+// QueryParts queries the "parts" edge of the Box entity.
+func (b *Box) QueryParts() *PartQuery {
+	return NewBoxClient(b.config).QueryParts(b)
 }
 
 // QueryPosition queries the "position" edge of the Box entity.

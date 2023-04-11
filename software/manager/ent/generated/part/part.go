@@ -31,8 +31,8 @@ const (
 	EdgeTags = "tags"
 	// EdgeProperties holds the string denoting the properties edge name in mutations.
 	EdgeProperties = "properties"
-	// EdgeSection holds the string denoting the section edge name in mutations.
-	EdgeSection = "section"
+	// EdgeBox holds the string denoting the box edge name in mutations.
+	EdgeBox = "box"
 	// Table holds the table name of the part in the database.
 	Table = "parts"
 	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
@@ -47,13 +47,13 @@ const (
 	PropertiesInverseTable = "properties"
 	// PropertiesColumn is the table column denoting the properties relation/edge.
 	PropertiesColumn = "part_properties"
-	// SectionTable is the table that holds the section relation/edge.
-	SectionTable = "parts"
-	// SectionInverseTable is the table name for the Section entity.
-	// It exists in this package in order to avoid circular dependency with the "section" package.
-	SectionInverseTable = "sections"
-	// SectionColumn is the table column denoting the section relation/edge.
-	SectionColumn = "part_section"
+	// BoxTable is the table that holds the box relation/edge.
+	BoxTable = "parts"
+	// BoxInverseTable is the table name for the Box entity.
+	// It exists in this package in order to avoid circular dependency with the "box" package.
+	BoxInverseTable = "boxes"
+	// BoxColumn is the table column denoting the box relation/edge.
+	BoxColumn = "part_box"
 )
 
 // Columns holds all SQL columns for part fields.
@@ -71,7 +71,8 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "parts"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"part_section",
+	"box_parts",
+	"part_box",
 }
 
 var (

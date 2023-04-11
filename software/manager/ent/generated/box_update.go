@@ -13,9 +13,9 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/box"
+	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
 	"github.com/niwla23/lagersystem/manager/ent/generated/predicate"
-	"github.com/niwla23/lagersystem/manager/ent/generated/section"
 )
 
 // BoxUpdate is the builder for updating Box entities.
@@ -65,19 +65,19 @@ func (bu *BoxUpdate) SetBoxId(u uuid.UUID) *BoxUpdate {
 	return bu
 }
 
-// AddSectionIDs adds the "sections" edge to the Section entity by IDs.
-func (bu *BoxUpdate) AddSectionIDs(ids ...int) *BoxUpdate {
-	bu.mutation.AddSectionIDs(ids...)
+// AddPartIDs adds the "parts" edge to the Part entity by IDs.
+func (bu *BoxUpdate) AddPartIDs(ids ...int) *BoxUpdate {
+	bu.mutation.AddPartIDs(ids...)
 	return bu
 }
 
-// AddSections adds the "sections" edges to the Section entity.
-func (bu *BoxUpdate) AddSections(s ...*Section) *BoxUpdate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// AddParts adds the "parts" edges to the Part entity.
+func (bu *BoxUpdate) AddParts(p ...*Part) *BoxUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
 	}
-	return bu.AddSectionIDs(ids...)
+	return bu.AddPartIDs(ids...)
 }
 
 // SetPositionID sets the "position" edge to the Position entity by ID.
@@ -104,25 +104,25 @@ func (bu *BoxUpdate) Mutation() *BoxMutation {
 	return bu.mutation
 }
 
-// ClearSections clears all "sections" edges to the Section entity.
-func (bu *BoxUpdate) ClearSections() *BoxUpdate {
-	bu.mutation.ClearSections()
+// ClearParts clears all "parts" edges to the Part entity.
+func (bu *BoxUpdate) ClearParts() *BoxUpdate {
+	bu.mutation.ClearParts()
 	return bu
 }
 
-// RemoveSectionIDs removes the "sections" edge to Section entities by IDs.
-func (bu *BoxUpdate) RemoveSectionIDs(ids ...int) *BoxUpdate {
-	bu.mutation.RemoveSectionIDs(ids...)
+// RemovePartIDs removes the "parts" edge to Part entities by IDs.
+func (bu *BoxUpdate) RemovePartIDs(ids ...int) *BoxUpdate {
+	bu.mutation.RemovePartIDs(ids...)
 	return bu
 }
 
-// RemoveSections removes "sections" edges to Section entities.
-func (bu *BoxUpdate) RemoveSections(s ...*Section) *BoxUpdate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// RemoveParts removes "parts" edges to Part entities.
+func (bu *BoxUpdate) RemoveParts(p ...*Part) *BoxUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
 	}
-	return bu.RemoveSectionIDs(ids...)
+	return bu.RemovePartIDs(ids...)
 }
 
 // ClearPosition clears the "position" edge to the Position entity.
@@ -185,33 +185,33 @@ func (bu *BoxUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := bu.mutation.BoxId(); ok {
 		_spec.SetField(box.FieldBoxId, field.TypeUUID, value)
 	}
-	if bu.mutation.SectionsCleared() {
+	if bu.mutation.PartsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   box.SectionsTable,
-			Columns: []string{box.SectionsColumn},
+			Table:   box.PartsTable,
+			Columns: []string{box.PartsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: section.FieldID,
+					Column: part.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := bu.mutation.RemovedSectionsIDs(); len(nodes) > 0 && !bu.mutation.SectionsCleared() {
+	if nodes := bu.mutation.RemovedPartsIDs(); len(nodes) > 0 && !bu.mutation.PartsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   box.SectionsTable,
-			Columns: []string{box.SectionsColumn},
+			Table:   box.PartsTable,
+			Columns: []string{box.PartsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: section.FieldID,
+					Column: part.FieldID,
 				},
 			},
 		}
@@ -220,17 +220,17 @@ func (bu *BoxUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := bu.mutation.SectionsIDs(); len(nodes) > 0 {
+	if nodes := bu.mutation.PartsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   box.SectionsTable,
-			Columns: []string{box.SectionsColumn},
+			Table:   box.PartsTable,
+			Columns: []string{box.PartsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: section.FieldID,
+					Column: part.FieldID,
 				},
 			},
 		}
@@ -328,19 +328,19 @@ func (buo *BoxUpdateOne) SetBoxId(u uuid.UUID) *BoxUpdateOne {
 	return buo
 }
 
-// AddSectionIDs adds the "sections" edge to the Section entity by IDs.
-func (buo *BoxUpdateOne) AddSectionIDs(ids ...int) *BoxUpdateOne {
-	buo.mutation.AddSectionIDs(ids...)
+// AddPartIDs adds the "parts" edge to the Part entity by IDs.
+func (buo *BoxUpdateOne) AddPartIDs(ids ...int) *BoxUpdateOne {
+	buo.mutation.AddPartIDs(ids...)
 	return buo
 }
 
-// AddSections adds the "sections" edges to the Section entity.
-func (buo *BoxUpdateOne) AddSections(s ...*Section) *BoxUpdateOne {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// AddParts adds the "parts" edges to the Part entity.
+func (buo *BoxUpdateOne) AddParts(p ...*Part) *BoxUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
 	}
-	return buo.AddSectionIDs(ids...)
+	return buo.AddPartIDs(ids...)
 }
 
 // SetPositionID sets the "position" edge to the Position entity by ID.
@@ -367,25 +367,25 @@ func (buo *BoxUpdateOne) Mutation() *BoxMutation {
 	return buo.mutation
 }
 
-// ClearSections clears all "sections" edges to the Section entity.
-func (buo *BoxUpdateOne) ClearSections() *BoxUpdateOne {
-	buo.mutation.ClearSections()
+// ClearParts clears all "parts" edges to the Part entity.
+func (buo *BoxUpdateOne) ClearParts() *BoxUpdateOne {
+	buo.mutation.ClearParts()
 	return buo
 }
 
-// RemoveSectionIDs removes the "sections" edge to Section entities by IDs.
-func (buo *BoxUpdateOne) RemoveSectionIDs(ids ...int) *BoxUpdateOne {
-	buo.mutation.RemoveSectionIDs(ids...)
+// RemovePartIDs removes the "parts" edge to Part entities by IDs.
+func (buo *BoxUpdateOne) RemovePartIDs(ids ...int) *BoxUpdateOne {
+	buo.mutation.RemovePartIDs(ids...)
 	return buo
 }
 
-// RemoveSections removes "sections" edges to Section entities.
-func (buo *BoxUpdateOne) RemoveSections(s ...*Section) *BoxUpdateOne {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// RemoveParts removes "parts" edges to Part entities.
+func (buo *BoxUpdateOne) RemoveParts(p ...*Part) *BoxUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
 	}
-	return buo.RemoveSectionIDs(ids...)
+	return buo.RemovePartIDs(ids...)
 }
 
 // ClearPosition clears the "position" edge to the Position entity.
@@ -472,33 +472,33 @@ func (buo *BoxUpdateOne) sqlSave(ctx context.Context) (_node *Box, err error) {
 	if value, ok := buo.mutation.BoxId(); ok {
 		_spec.SetField(box.FieldBoxId, field.TypeUUID, value)
 	}
-	if buo.mutation.SectionsCleared() {
+	if buo.mutation.PartsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   box.SectionsTable,
-			Columns: []string{box.SectionsColumn},
+			Table:   box.PartsTable,
+			Columns: []string{box.PartsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: section.FieldID,
+					Column: part.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := buo.mutation.RemovedSectionsIDs(); len(nodes) > 0 && !buo.mutation.SectionsCleared() {
+	if nodes := buo.mutation.RemovedPartsIDs(); len(nodes) > 0 && !buo.mutation.PartsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   box.SectionsTable,
-			Columns: []string{box.SectionsColumn},
+			Table:   box.PartsTable,
+			Columns: []string{box.PartsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: section.FieldID,
+					Column: part.FieldID,
 				},
 			},
 		}
@@ -507,17 +507,17 @@ func (buo *BoxUpdateOne) sqlSave(ctx context.Context) (_node *Box, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := buo.mutation.SectionsIDs(); len(nodes) > 0 {
+	if nodes := buo.mutation.PartsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   box.SectionsTable,
-			Columns: []string{box.SectionsColumn},
+			Table:   box.PartsTable,
+			Columns: []string{box.PartsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: section.FieldID,
+					Column: part.FieldID,
 				},
 			},
 		}

@@ -15,7 +15,6 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
 	"github.com/niwla23/lagersystem/manager/ent/generated/property"
-	"github.com/niwla23/lagersystem/manager/ent/generated/section"
 	"github.com/niwla23/lagersystem/manager/ent/generated/tag"
 	"github.com/niwla23/lagersystem/manager/ent/generated/warehouse"
 )
@@ -49,7 +48,6 @@ func columnChecker(table string) func(string) error {
 		part.Table:      part.ValidColumn,
 		position.Table:  position.ValidColumn,
 		property.Table:  property.ValidColumn,
-		section.Table:   section.ValidColumn,
 		tag.Table:       tag.ValidColumn,
 		warehouse.Table: warehouse.ValidColumn,
 	}

@@ -14,7 +14,6 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
 	"github.com/niwla23/lagersystem/manager/ent/generated/property"
-	"github.com/niwla23/lagersystem/manager/ent/generated/section"
 	"github.com/niwla23/lagersystem/manager/ent/generated/tag"
 	"github.com/niwla23/lagersystem/manager/ent/generated/warehouse"
 
@@ -36,8 +35,6 @@ type Client struct {
 	Position *PositionClient
 	// Property is the client for interacting with the Property builders.
 	Property *PropertyClient
-	// Section is the client for interacting with the Section builders.
-	Section *SectionClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
 	// Warehouse is the client for interacting with the Warehouse builders.
@@ -59,7 +56,6 @@ func (c *Client) init() {
 	c.Part = NewPartClient(c.config)
 	c.Position = NewPositionClient(c.config)
 	c.Property = NewPropertyClient(c.config)
-	c.Section = NewSectionClient(c.config)
 	c.Tag = NewTagClient(c.config)
 	c.Warehouse = NewWarehouseClient(c.config)
 }
@@ -99,7 +95,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Part:      NewPartClient(cfg),
 		Position:  NewPositionClient(cfg),
 		Property:  NewPropertyClient(cfg),
-		Section:   NewSectionClient(cfg),
 		Tag:       NewTagClient(cfg),
 		Warehouse: NewWarehouseClient(cfg),
 	}, nil
@@ -125,7 +120,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Part:      NewPartClient(cfg),
 		Position:  NewPositionClient(cfg),
 		Property:  NewPropertyClient(cfg),
-		Section:   NewSectionClient(cfg),
 		Tag:       NewTagClient(cfg),
 		Warehouse: NewWarehouseClient(cfg),
 	}, nil
@@ -160,7 +154,6 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Part.Use(hooks...)
 	c.Position.Use(hooks...)
 	c.Property.Use(hooks...)
-	c.Section.Use(hooks...)
 	c.Tag.Use(hooks...)
 	c.Warehouse.Use(hooks...)
 }
@@ -172,7 +165,6 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Part.Intercept(interceptors...)
 	c.Position.Intercept(interceptors...)
 	c.Property.Intercept(interceptors...)
-	c.Section.Intercept(interceptors...)
 	c.Tag.Intercept(interceptors...)
 	c.Warehouse.Intercept(interceptors...)
 }
@@ -188,8 +180,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Position.mutate(ctx, m)
 	case *PropertyMutation:
 		return c.Property.mutate(ctx, m)
-	case *SectionMutation:
-		return c.Section.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
 	case *WarehouseMutation:
@@ -292,15 +282,15 @@ func (c *BoxClient) GetX(ctx context.Context, id int) *Box {
 	return obj
 }
 
-// QuerySections queries the sections edge of a Box.
-func (c *BoxClient) QuerySections(b *Box) *SectionQuery {
-	query := (&SectionClient{config: c.config}).Query()
+// QueryParts queries the parts edge of a Box.
+func (c *BoxClient) QueryParts(b *Box) *PartQuery {
+	query := (&PartClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := b.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(box.Table, box.FieldID, id),
-			sqlgraph.To(section.Table, section.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, box.SectionsTable, box.SectionsColumn),
+			sqlgraph.To(part.Table, part.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, box.PartsTable, box.PartsColumn),
 		)
 		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
 		return fromV, nil
@@ -475,15 +465,15 @@ func (c *PartClient) QueryProperties(pa *Part) *PropertyQuery {
 	return query
 }
 
-// QuerySection queries the section edge of a Part.
-func (c *PartClient) QuerySection(pa *Part) *SectionQuery {
-	query := (&SectionClient{config: c.config}).Query()
+// QueryBox queries the box edge of a Part.
+func (c *PartClient) QueryBox(pa *Part) *BoxQuery {
+	query := (&BoxClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := pa.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(part.Table, part.FieldID, id),
-			sqlgraph.To(section.Table, section.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, part.SectionTable, part.SectionColumn),
+			sqlgraph.To(box.Table, box.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, part.BoxTable, part.BoxColumn),
 		)
 		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
 		return fromV, nil
@@ -800,157 +790,6 @@ func (c *PropertyClient) mutate(ctx context.Context, m *PropertyMutation) (Value
 		return (&PropertyDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("generated: unknown Property mutation op: %q", m.Op())
-	}
-}
-
-// SectionClient is a client for the Section schema.
-type SectionClient struct {
-	config
-}
-
-// NewSectionClient returns a client for the Section from the given config.
-func NewSectionClient(c config) *SectionClient {
-	return &SectionClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `section.Hooks(f(g(h())))`.
-func (c *SectionClient) Use(hooks ...Hook) {
-	c.hooks.Section = append(c.hooks.Section, hooks...)
-}
-
-// Use adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `section.Intercept(f(g(h())))`.
-func (c *SectionClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Section = append(c.inters.Section, interceptors...)
-}
-
-// Create returns a builder for creating a Section entity.
-func (c *SectionClient) Create() *SectionCreate {
-	mutation := newSectionMutation(c.config, OpCreate)
-	return &SectionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Section entities.
-func (c *SectionClient) CreateBulk(builders ...*SectionCreate) *SectionCreateBulk {
-	return &SectionCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Section.
-func (c *SectionClient) Update() *SectionUpdate {
-	mutation := newSectionMutation(c.config, OpUpdate)
-	return &SectionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *SectionClient) UpdateOne(s *Section) *SectionUpdateOne {
-	mutation := newSectionMutation(c.config, OpUpdateOne, withSection(s))
-	return &SectionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *SectionClient) UpdateOneID(id int) *SectionUpdateOne {
-	mutation := newSectionMutation(c.config, OpUpdateOne, withSectionID(id))
-	return &SectionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Section.
-func (c *SectionClient) Delete() *SectionDelete {
-	mutation := newSectionMutation(c.config, OpDelete)
-	return &SectionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *SectionClient) DeleteOne(s *Section) *SectionDeleteOne {
-	return c.DeleteOneID(s.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *SectionClient) DeleteOneID(id int) *SectionDeleteOne {
-	builder := c.Delete().Where(section.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &SectionDeleteOne{builder}
-}
-
-// Query returns a query builder for Section.
-func (c *SectionClient) Query() *SectionQuery {
-	return &SectionQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeSection},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Section entity by its id.
-func (c *SectionClient) Get(ctx context.Context, id int) (*Section, error) {
-	return c.Query().Where(section.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *SectionClient) GetX(ctx context.Context, id int) *Section {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryBox queries the box edge of a Section.
-func (c *SectionClient) QueryBox(s *Section) *BoxQuery {
-	query := (&BoxClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := s.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(section.Table, section.FieldID, id),
-			sqlgraph.To(box.Table, box.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, section.BoxTable, section.BoxColumn),
-		)
-		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryParts queries the parts edge of a Section.
-func (c *SectionClient) QueryParts(s *Section) *PartQuery {
-	query := (&PartClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := s.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(section.Table, section.FieldID, id),
-			sqlgraph.To(part.Table, part.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, section.PartsTable, section.PartsColumn),
-		)
-		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *SectionClient) Hooks() []Hook {
-	hooks := c.hooks.Section
-	return append(hooks[:len(hooks):len(hooks)], section.Hooks[:]...)
-}
-
-// Interceptors returns the client interceptors.
-func (c *SectionClient) Interceptors() []Interceptor {
-	return c.inters.Section
-}
-
-func (c *SectionClient) mutate(ctx context.Context, m *SectionMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&SectionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&SectionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&SectionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&SectionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("generated: unknown Section mutation op: %q", m.Op())
 	}
 }
 

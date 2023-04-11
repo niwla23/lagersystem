@@ -57,18 +57,6 @@ func (f PropertyFunc) Mutate(ctx context.Context, m generated.Mutation) (generat
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *generated.PropertyMutation", m)
 }
 
-// The SectionFunc type is an adapter to allow the use of ordinary
-// function as Section mutator.
-type SectionFunc func(context.Context, *generated.SectionMutation) (generated.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f SectionFunc) Mutate(ctx context.Context, m generated.Mutation) (generated.Value, error) {
-	if mv, ok := m.(*generated.SectionMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *generated.SectionMutation", m)
-}
-
 // The TagFunc type is an adapter to allow the use of ordinary
 // function as Tag mutator.
 type TagFunc func(context.Context, *generated.TagMutation) (generated.Value, error)
