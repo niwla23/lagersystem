@@ -1,5 +1,5 @@
 // this component allows the user to choose how to store the newly added part.
-export type AddMode = "emptyBox" | "storeWithPart" | "storeOnly"
+export type AddMode = "emptyBox" | "createOnly" | "storeOnly"
 
 let ModeCard = (props: { title: string; text: string; active: boolean; onClick: () => void }) => {
   return (
@@ -26,16 +26,16 @@ export default function PartAddMode(props: Props) {
     <div className="flex flex-col w-full gap-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <ModeCard
-          title="Give me a free section"
-          text="The system will find an unused section and deliver the box for you to put in the part(s)"
+          title="Give me a empty box"
+          text="The system will find an empty box and deliver it for you to put in the part(s)"
           active={props.modeChosen === "emptyBox"}
           onClick={() => props.setModeChosen("emptyBox")}
         />
         <ModeCard
-          title="I want to put this in the same section as another part"
-          text="You will be able to choose the part this should be stored together with, then the box is delivered for you to put in the part(s)"
-          active={props.modeChosen === "storeWithPart"}
-          onClick={() => props.setModeChosen("storeWithPart")}
+          title="Only create part"
+          text="Creates the part in the database but does not yet store it in the warehouse"
+          active={props.modeChosen === "createOnly"}
+          onClick={() => props.setModeChosen("createOnly")}
         />
         <ModeCard
           title="I have already taken out the box in which I want to put it"

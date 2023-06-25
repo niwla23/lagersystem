@@ -1,3 +1,5 @@
 stls
 *.FCStd1
 *.dtmp
+software/operatorx64env
+.idea

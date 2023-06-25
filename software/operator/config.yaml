@@ -1,0 +1,29 @@
+qrCodeImageFormat: "raspistill -o /tmp/qrcode.jpg -t 1"
+qrCodeFilePath: "/tmp/qrcode.jpg"
+
+# global offset for all positions
+offset:
+  x: 0
+  y: 0
+
+# Positon used for scanning the QR Code box
+scanPosition:
+  x: 0
+  y: 200
+
+# Input / Output Positions
+ioPositions:
+  - x: 0
+    y: 0
+
+  - x: 0
+    y: 0
+
+# all the positions for storing boxes. key is the id of the position
+positions:
+  1:
+    x: 20
+    y: 20
+  2:
+    x: 40
+    y: 25

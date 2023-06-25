@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom"
 
 export default function AddPart() {
   const navigate = useNavigate()
-  type AddStage = "selectMode" | "dataForm" | "searchPart" | "getting" | "storing" | "confirmPutPartIn"
+  type AddStage = "selectMode" | "dataForm" | "getting" | "storing" | "confirmPutPartIn"
 
   const [stage, setStage] = useState<AddStage>("selectMode")
   const [partAddMode, setPartAddMode] = useState<AddMode>("emptyBox")
@@ -58,9 +58,9 @@ export default function AddPart() {
         }
         break
 
-      case "storeWithPart":
-        // send user to search mask to find the part to store the new part with
-        setStage("searchPart")
+      case "createOnly":
+        // we are done here
+        navigate("/")
         break
 
       case "storeOnly":
@@ -73,8 +73,6 @@ export default function AddPart() {
   let content = <div></div>
   if (stage === "selectMode") {
     content = <ChoosePartAddMode modeChosen={partAddMode} setModeChosen={setPartAddMode} submit={() => setStage("dataForm")} />
-  } else if (stage === "searchPart") {
-    content = content = <PartAddSearch submit={() => deliverBoxForPutIn(1)} />
   } else if (stage === "dataForm") {
     content = <PartAddDataForm submit={submitForm} />
   } else if (stage === "getting") {

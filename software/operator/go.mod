@@ -2,11 +2,15 @@ module github.com/niwla23/lagersystem/operator
 
 go 1.19
 
-require github.com/gofiber/fiber/v2 v2.42.0
+require (
+	github.com/gofiber/fiber/v2 v2.42.0
+	github.com/makiuchi-d/gozxing v0.1.1
+)
 
 require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/kdar/goquirc v0.0.0-20170404200522-467c1664402a // indirect
 	github.com/klauspost/compress v1.15.15 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
@@ -20,4 +24,6 @@ require (
 	github.com/valyala/fasthttp v1.44.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 )
