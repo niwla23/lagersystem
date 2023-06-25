@@ -28,10 +28,10 @@ export default function Home() {
       <PartCard
         id={part.id}
         actions={[
-          <button className="btn btn-primary" onClick={() => {}}>
+          <button className="btn btn-primary flex-grow sm:flex-grow-0" onClick={() => {}}>
             Deliver
           </button>,
-          <button className="btn btn-ghost" onClick={() => {navigate(`/parts/edit/${part.id}`)}}>
+          <button className="btn btn-secondary" onClick={() => {navigate(`/parts/edit/${part.id}`)}}>
             <FontAwesomeIcon icon={faPen} />
           </button>,
         ]}

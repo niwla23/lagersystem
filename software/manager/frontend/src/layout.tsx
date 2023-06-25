@@ -8,7 +8,7 @@ export default function Layout() {
 
   // this component is used to highlight the current page in the menu
   let LinkWithStyle = (props: { to: string; children: JSX.Element | JSX.Element[] | string }) => {
-    let style = location.pathname === props.to ? "bg-accent text-accent-content" : ""
+    let style = location.pathname === props.to ? "bg-secondary text-secondary-content" : ""
 
     return (
       <Link to={props.to} className={style}>
