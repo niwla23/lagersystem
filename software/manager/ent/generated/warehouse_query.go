@@ -296,7 +296,7 @@ func (wq *WarehouseQuery) WithPositions(opts ...func(*PositionQuery)) *Warehouse
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"createdAt"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -319,7 +319,7 @@ func (wq *WarehouseQuery) GroupBy(field string, fields ...string) *WarehouseGrou
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"createdAt"`
 //	}
 //
 //	client.Warehouse.Query().

@@ -18,13 +18,13 @@ type Warehouse struct {
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// CreatedAt holds the value of the "createdAt" field.
-	CreatedAt time.Time `json:"createdAt,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
 	// UpdatedAt holds the value of the "updatedAt" field.
-	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	UpdatedAt time.Time `json:"updatedAt"`
 	// Name holds the value of the "name" field.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Description holds the value of the "description" field.
-	Description *string `json:"description,omitempty"`
+	Description *string `json:"description"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the WarehouseQuery when eager-loading is set.
 	Edges WarehouseEdges `json:"-"`

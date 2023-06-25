@@ -296,7 +296,7 @@ func (pq *PropertyQuery) WithPart(opts ...func(*PartQuery)) *PropertyQuery {
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"createdAt"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -319,7 +319,7 @@ func (pq *PropertyQuery) GroupBy(field string, fields ...string) *PropertyGroupB
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"createdAt"`
 //	}
 //
 //	client.Property.Query().

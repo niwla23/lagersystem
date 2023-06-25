@@ -332,7 +332,7 @@ func (bq *BoxQuery) WithPosition(opts ...func(*PositionQuery)) *BoxQuery {
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"createdAt"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -355,7 +355,7 @@ func (bq *BoxQuery) GroupBy(field string, fields ...string) *BoxGroupBy {
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"createdAt"`
 //	}
 //
 //	client.Box.Query().

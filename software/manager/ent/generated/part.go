@@ -20,19 +20,19 @@ type Part struct {
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// CreatedAt holds the value of the "createdAt" field.
-	CreatedAt time.Time `json:"createdAt,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
 	// UpdatedAt holds the value of the "updatedAt" field.
-	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	UpdatedAt time.Time `json:"updatedAt"`
 	// Deleted holds the value of the "deleted" field.
-	Deleted bool `json:"deleted,omitempty"`
+	Deleted bool `json:"deleted"`
 	// Name holds the value of the "name" field.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Description holds the value of the "description" field.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// -1 means amount is unknown
 	Amount int `json:"amount"`
 	// ImageId holds the value of the "imageId" field.
-	ImageId uuid.UUID `json:"imageId,omitempty"`
+	ImageId uuid.UUID `json:"imageId"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PartQuery when eager-loading is set.
 	Edges     PartEdges `json:"-"`

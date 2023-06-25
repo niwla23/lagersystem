@@ -20,11 +20,11 @@ type Position struct {
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// CreatedAt holds the value of the "createdAt" field.
-	CreatedAt time.Time `json:"createdAt,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
 	// UpdatedAt holds the value of the "updatedAt" field.
-	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	UpdatedAt time.Time `json:"updatedAt"`
 	// PositionId holds the value of the "positionId" field.
-	PositionId int `json:"positionId,omitempty"`
+	PositionId int `json:"positionId"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PositionQuery when eager-loading is set.
 	Edges               PositionEdges `json:"-"`

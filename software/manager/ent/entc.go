@@ -8,6 +8,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"entgo.io/ent/entc"
@@ -21,7 +22,7 @@ func main() {
 			&EncodeExtension{},
 		),
 	}
-	err := entc.Generate("./schema", &gen.Config{Target: "./generated", Package: "github.com/niwla23/lagersystem/manager/ent/generated"}, opts...)
+	err := entc.Generate("./schema", &gen.Config{Target: "./generated", Package: "github.com/niwla23/lagersystem/manager/ent/generated", Hooks: []gen.Hook{TagFields("json")}}, opts...)
 	if err != nil {
 		log.Fatalf("running ent codegen: %v", err)
 	}
@@ -71,3 +72,17 @@ func (e *EncodeExtension) Hooks() []gen.Hook {
 }
 
 var _ entc.Extension = (*EncodeExtension)(nil)
+
+// TagFields tags all fields defined in the schema with the given struct-tag.
+func TagFields(name string) gen.Hook {
+	return func(next gen.Generator) gen.Generator {
+		return gen.GenerateFunc(func(g *gen.Graph) error {
+			for _, node := range g.Nodes {
+				for _, field := range node.Fields {
+					field.StructTag = fmt.Sprintf("%s:%q", name, field.Name)
+				}
+			}
+			return next.Generate(g)
+		})
+	}
+}

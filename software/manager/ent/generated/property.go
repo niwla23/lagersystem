@@ -19,15 +19,15 @@ type Property struct {
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// CreatedAt holds the value of the "createdAt" field.
-	CreatedAt time.Time `json:"createdAt,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
 	// UpdatedAt holds the value of the "updatedAt" field.
-	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	UpdatedAt time.Time `json:"updatedAt"`
 	// Name holds the value of the "name" field.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Value holds the value of the "value" field.
-	Value string `json:"value,omitempty"`
+	Value string `json:"value"`
 	// Type holds the value of the "type" field.
-	Type string `json:"type,omitempty"`
+	Type string `json:"type"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PropertyQuery when eager-loading is set.
 	Edges           PropertyEdges `json:"-"`

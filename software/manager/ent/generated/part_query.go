@@ -369,7 +369,7 @@ func (pq *PartQuery) WithBox(opts ...func(*BoxQuery)) *PartQuery {
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"createdAt"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -392,7 +392,7 @@ func (pq *PartQuery) GroupBy(field string, fields ...string) *PartGroupBy {
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"createdAt"`
 //	}
 //
 //	client.Part.Query().

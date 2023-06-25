@@ -20,11 +20,11 @@ type Box struct {
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// CreatedAt holds the value of the "createdAt" field.
-	CreatedAt time.Time `json:"createdAt,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
 	// UpdatedAt holds the value of the "updatedAt" field.
-	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	UpdatedAt time.Time `json:"updatedAt"`
 	// BoxId holds the value of the "boxId" field.
-	BoxId uuid.UUID `json:"boxId,omitempty"`
+	BoxId uuid.UUID `json:"boxId"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BoxQuery when eager-loading is set.
 	Edges BoxEdges `json:"-"`
