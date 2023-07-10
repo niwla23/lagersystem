@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/box"
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
@@ -130,8 +131,8 @@ func (bq *BoxQuery) FirstX(ctx context.Context) *Box {
 
 // FirstID returns the first Box ID from the query.
 // Returns a *NotFoundError when no Box ID was found.
-func (bq *BoxQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (bq *BoxQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = bq.Limit(1).IDs(setContextOp(ctx, bq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -143,7 +144,7 @@ func (bq *BoxQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (bq *BoxQuery) FirstIDX(ctx context.Context) int {
+func (bq *BoxQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := bq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -181,8 +182,8 @@ func (bq *BoxQuery) OnlyX(ctx context.Context) *Box {
 // OnlyID is like Only, but returns the only Box ID in the query.
 // Returns a *NotSingularError when more than one Box ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (bq *BoxQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (bq *BoxQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = bq.Limit(2).IDs(setContextOp(ctx, bq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -198,7 +199,7 @@ func (bq *BoxQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (bq *BoxQuery) OnlyIDX(ctx context.Context) int {
+func (bq *BoxQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := bq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -226,8 +227,8 @@ func (bq *BoxQuery) AllX(ctx context.Context) []*Box {
 }
 
 // IDs executes the query and returns a list of Box IDs.
-func (bq *BoxQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
+func (bq *BoxQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	var ids []uuid.UUID
 	ctx = setContextOp(ctx, bq.ctx, "IDs")
 	if err := bq.Select(box.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
@@ -236,7 +237,7 @@ func (bq *BoxQuery) IDs(ctx context.Context) ([]int, error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (bq *BoxQuery) IDsX(ctx context.Context) []int {
+func (bq *BoxQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := bq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -445,7 +446,7 @@ func (bq *BoxQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Box, err
 
 func (bq *BoxQuery) loadParts(ctx context.Context, query *PartQuery, nodes []*Box, init func(*Box), assign func(*Box, *Part)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*Box)
+	nodeids := make(map[uuid.UUID]*Box)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -476,7 +477,7 @@ func (bq *BoxQuery) loadParts(ctx context.Context, query *PartQuery, nodes []*Bo
 }
 func (bq *BoxQuery) loadPosition(ctx context.Context, query *PositionQuery, nodes []*Box, init func(*Box), assign func(*Box, *Position)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*Box)
+	nodeids := make(map[uuid.UUID]*Box)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -518,7 +519,7 @@ func (bq *BoxQuery) querySpec() *sqlgraph.QuerySpec {
 			Table:   box.Table,
 			Columns: box.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeUUID,
 				Column: box.FieldID,
 			},
 		},

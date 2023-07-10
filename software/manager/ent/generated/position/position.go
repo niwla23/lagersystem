@@ -17,8 +17,6 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updatedat field in the database.
 	FieldUpdatedAt = "updated_at"
-	// FieldPositionId holds the string denoting the positionid field in the database.
-	FieldPositionId = "position_id"
 	// EdgeStoredBox holds the string denoting the storedbox edge name in mutations.
 	EdgeStoredBox = "storedBox"
 	// EdgeWarehouse holds the string denoting the warehouse edge name in mutations.
@@ -46,7 +44,6 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
-	FieldPositionId,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "positions"
@@ -82,6 +79,4 @@ var (
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updatedAt" field.
 	DefaultUpdatedAt func() time.Time
-	// PositionIdValidator is a validator for the "positionId" field. It is called by the builders before save.
-	PositionIdValidator func(int) error
 )

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/box"
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
 	"github.com/niwla23/lagersystem/manager/ent/generated/warehouse"
@@ -23,12 +24,10 @@ type Position struct {
 	CreatedAt time.Time `json:"createdAt"`
 	// UpdatedAt holds the value of the "updatedAt" field.
 	UpdatedAt time.Time `json:"updatedAt"`
-	// PositionId holds the value of the "positionId" field.
-	PositionId int `json:"positionId"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PositionQuery when eager-loading is set.
 	Edges               PositionEdges `json:"-"`
-	box_position        *int
+	box_position        *uuid.UUID
 	warehouse_positions *int
 }
 
@@ -74,12 +73,12 @@ func (*Position) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case position.FieldID, position.FieldPositionId:
+		case position.FieldID:
 			values[i] = new(sql.NullInt64)
 		case position.FieldCreatedAt, position.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case position.ForeignKeys[0]: // box_position
-			values[i] = new(sql.NullInt64)
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case position.ForeignKeys[1]: // warehouse_positions
 			values[i] = new(sql.NullInt64)
 		default:
@@ -115,18 +114,12 @@ func (po *Position) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				po.UpdatedAt = value.Time
 			}
-		case position.FieldPositionId:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field positionId", values[i])
-			} else if value.Valid {
-				po.PositionId = int(value.Int64)
-			}
 		case position.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field box_position", value)
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field box_position", values[i])
 			} else if value.Valid {
-				po.box_position = new(int)
-				*po.box_position = int(value.Int64)
+				po.box_position = new(uuid.UUID)
+				*po.box_position = *value.S.(*uuid.UUID)
 			}
 		case position.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -178,9 +171,6 @@ func (po *Position) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updatedAt=")
 	builder.WriteString(po.UpdatedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("positionId=")
-	builder.WriteString(fmt.Sprintf("%v", po.PositionId))
 	builder.WriteByte(')')
 	return builder.String()
 }

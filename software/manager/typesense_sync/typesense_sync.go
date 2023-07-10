@@ -42,7 +42,6 @@ func syncPartsToTypesense(parts []*ent.Part) {
 		for _, tag := range part.Edges.Tags {
 			tags = append(tags, tag.Name)
 		}
-		fmt.Println(tags)
 
 		partDocument := typesense_wrapper.PartDocument{
 			ID:          strconv.Itoa(part.ID),
@@ -54,16 +53,17 @@ func syncPartsToTypesense(parts []*ent.Part) {
 	}
 	if len(documentsToIndex) > 0 {
 		fmt.Println("Indexing parts...")
-		params := &api.ImportDocumentsParams{}
+		action := "upsert"
+		params := &api.ImportDocumentsParams{Action: &action}
 
 		_, err := typesense_wrapper.TypesenseClient.Collection("parts").Documents().Import(documentsToIndex, params)
+
 		check(err)
 	}
 }
 
 func SyncBackgroundTask() {
 	for {
-		fmt.Println("Syncing in background...")
 		client, err := ent.Open("sqlite3", config.DBUri)
 		if err != nil {
 			log.Fatalf("failed opening connection to sqlite: %v", err)
@@ -73,7 +73,6 @@ func SyncBackgroundTask() {
 		// get all parts that have been modified since the last sync
 		modifiedParts, err := client.Part.Query().Where(part.UpdatedAtGT(time.Now().Add(SYNC_INTERVAL * -1))).WithTags().All(ctx)
 		check(err)
-		fmt.Println("Modified parts:", modifiedParts)
 		syncPartsToTypesense(modifiedParts)
 
 		// integrity check: check if part counts are equal

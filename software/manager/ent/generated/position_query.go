@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/box"
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
 	"github.com/niwla23/lagersystem/manager/ent/generated/predicate"
@@ -450,8 +451,8 @@ func (pq *PositionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pos
 }
 
 func (pq *PositionQuery) loadStoredBox(ctx context.Context, query *BoxQuery, nodes []*Position, init func(*Position), assign func(*Position, *Box)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*Position)
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Position)
 	for i := range nodes {
 		if nodes[i].box_position == nil {
 			continue

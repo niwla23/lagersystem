@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -26,7 +28,7 @@ func RegisterBoxRoutes(router fiber.Router, client *ent.Client, ctx context.Cont
 		}
 
 		boxX, err := client.Box.Create().
-			SetBoxId(data.BoxId).
+			SetID(data.BoxId).
 			Save(ctx)
 
 		if err != nil {
@@ -51,26 +53,44 @@ func RegisterBoxRoutes(router fiber.Router, client *ent.Client, ctx context.Cont
 						Where(box.HasPositionWith(position.HasWarehouseWith(warehouse.ID(1)))). // that is currently stored in warehouse 1
 						Where(box.Not(box.HasParts())).                                         // that has no parts in it
 						WithPosition().                                                         // include the position of the box
-						Only(ctx)                                                               // get the first result
+						First(ctx)                                                              // get the first result
 		if err != nil {
 			return err
 		}
 		return c.JSON(box)
 	})
 
-	router.Get("/get-by-scanner", func(c *fiber.Ctx) error {
-		boxX, err := helpers.GetBoxFromScanner()
+	// router.Get("/get-by-scanner", func(c *fiber.Ctx) error {
+	// 	boxX, err := helpers.ScanIoPos()
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	return c.JSON(boxX)
+	// })
+
+	router.Post("/:boxId/deliver", func(c *fiber.Ctx) error {
+		boxId, err := uuid.Parse(c.Params("boxId"))
 		if err != nil {
 			return err
 		}
-		return c.JSON(boxX)
-	})
+		// ioPos := c.Params("ioPos")
 
-	router.Post("/:boxId/deliver", func(c *fiber.Ctx) error {
-		boxId, _ := uuid.Parse(c.Params("boxId"))
+		// ioState, err := helpers.GetIOState()
+		// if err != nil {
+		// 	return err
+		// }
+
+		// isWantedIoOk := helpers.IsIoSlotFree(ioState, ioPos)
+
+		// if ioPos == "0" && !isWantedIoOk {
+		// 	ioPos, err = helpers.FindIoSlot()
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// }
 
 		// get box from db
-		box, err := client.Box.Query().Where(box.BoxId(boxId)).Only(ctx)
+		box, err := client.Box.Query().Where(box.ID(boxId)).Only(ctx)
 		if err != nil {
 			return err
 		}
@@ -81,10 +101,42 @@ func RegisterBoxRoutes(router fiber.Router, client *ent.Client, ctx context.Cont
 			return err
 		}
 
-		resp, err := helpers.DeliverBoxByPositionId(position.ID)
+		resp, err := helpers.PickupBox(position.ID)
 		if err != nil {
 			return err
 		}
+
+		// update position of box
+		_, err = client.Box.UpdateOne(box).ClearPosition().Save(ctx)
+		if err != nil {
+			return err
+		}
+
 		return c.JSON(resp)
+	})
+
+	router.Get("/getFromScanner", func(c *fiber.Ctx) error {
+		startTime := time.Now()
+
+		ioState, err := helpers.GetIOState()
+		if err != nil {
+			return err
+		}
+
+		if helpers.IsIoSlotFree(ioState, "1") {
+			return errors.New("no box in scanner")
+		}
+
+		// scan box and find it in db
+		boxX, _, err := helpers.ScanIoPos("1")
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(&fiber.Map{
+			"status":   "success",
+			"boxId":    boxX.ID,
+			"duration": time.Since(startTime).Seconds(),
+		})
 	})
 }

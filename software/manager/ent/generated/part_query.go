@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/box"
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/predicate"
@@ -588,8 +589,8 @@ func (pq *PartQuery) loadProperties(ctx context.Context, query *PropertyQuery, n
 	return nil
 }
 func (pq *PartQuery) loadBox(ctx context.Context, query *BoxQuery, nodes []*Part, init func(*Part), assign func(*Part, *Box)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*Part)
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Part)
 	for i := range nodes {
 		if nodes[i].box_parts == nil {
 			continue

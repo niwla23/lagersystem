@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/migrate"
 
 	"github.com/niwla23/lagersystem/manager/ent/generated/box"
@@ -235,7 +236,7 @@ func (c *BoxClient) UpdateOne(b *Box) *BoxUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *BoxClient) UpdateOneID(id int) *BoxUpdateOne {
+func (c *BoxClient) UpdateOneID(id uuid.UUID) *BoxUpdateOne {
 	mutation := newBoxMutation(c.config, OpUpdateOne, withBoxID(id))
 	return &BoxUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -252,7 +253,7 @@ func (c *BoxClient) DeleteOne(b *Box) *BoxDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *BoxClient) DeleteOneID(id int) *BoxDeleteOne {
+func (c *BoxClient) DeleteOneID(id uuid.UUID) *BoxDeleteOne {
 	builder := c.Delete().Where(box.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -269,12 +270,12 @@ func (c *BoxClient) Query() *BoxQuery {
 }
 
 // Get returns a Box entity by its id.
-func (c *BoxClient) Get(ctx context.Context, id int) (*Box, error) {
+func (c *BoxClient) Get(ctx context.Context, id uuid.UUID) (*Box, error) {
 	return c.Query().Where(box.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *BoxClient) GetX(ctx context.Context, id int) *Box {
+func (c *BoxClient) GetX(ctx context.Context, id uuid.UUID) *Box {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)

@@ -21,6 +21,7 @@ module.exports = {
           "base-200": "rgb(10, 10, 10)",
           "base-300": "rgb(5, 5, 5)",
           "--rounded-btn": "0rem",
+          "--rounded-box": "0rem",
         }
       },
       "business"

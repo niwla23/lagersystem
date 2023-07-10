@@ -44,10 +44,9 @@ type BoxMutation struct {
 	config
 	op              Op
 	typ             string
-	id              *int
+	id              *uuid.UUID
 	createdAt       *time.Time
 	updatedAt       *time.Time
-	boxId           *uuid.UUID
 	clearedFields   map[string]struct{}
 	parts           map[int]struct{}
 	removedparts    map[int]struct{}
@@ -79,7 +78,7 @@ func newBoxMutation(c config, op Op, opts ...boxOption) *BoxMutation {
 }
 
 // withBoxID sets the ID field of the mutation.
-func withBoxID(id int) boxOption {
+func withBoxID(id uuid.UUID) boxOption {
 	return func(m *BoxMutation) {
 		var (
 			err   error
@@ -129,9 +128,15 @@ func (m BoxMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Box entities.
+func (m *BoxMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *BoxMutation) ID() (id int, exists bool) {
+func (m *BoxMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -142,12 +147,12 @@ func (m *BoxMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *BoxMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *BoxMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -227,42 +232,6 @@ func (m *BoxMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error)
 // ResetUpdatedAt resets all changes to the "updatedAt" field.
 func (m *BoxMutation) ResetUpdatedAt() {
 	m.updatedAt = nil
-}
-
-// SetBoxId sets the "boxId" field.
-func (m *BoxMutation) SetBoxId(u uuid.UUID) {
-	m.boxId = &u
-}
-
-// BoxId returns the value of the "boxId" field in the mutation.
-func (m *BoxMutation) BoxId() (r uuid.UUID, exists bool) {
-	v := m.boxId
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldBoxId returns the old "boxId" field's value of the Box entity.
-// If the Box object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BoxMutation) OldBoxId(ctx context.Context) (v uuid.UUID, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldBoxId is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldBoxId requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldBoxId: %w", err)
-	}
-	return oldValue.BoxId, nil
-}
-
-// ResetBoxId resets all changes to the "boxId" field.
-func (m *BoxMutation) ResetBoxId() {
-	m.boxId = nil
 }
 
 // AddPartIDs adds the "parts" edge to the Part entity by ids.
@@ -392,15 +361,12 @@ func (m *BoxMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BoxMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 2)
 	if m.createdAt != nil {
 		fields = append(fields, box.FieldCreatedAt)
 	}
 	if m.updatedAt != nil {
 		fields = append(fields, box.FieldUpdatedAt)
-	}
-	if m.boxId != nil {
-		fields = append(fields, box.FieldBoxId)
 	}
 	return fields
 }
@@ -414,8 +380,6 @@ func (m *BoxMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case box.FieldUpdatedAt:
 		return m.UpdatedAt()
-	case box.FieldBoxId:
-		return m.BoxId()
 	}
 	return nil, false
 }
@@ -429,8 +393,6 @@ func (m *BoxMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldCreatedAt(ctx)
 	case box.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
-	case box.FieldBoxId:
-		return m.OldBoxId(ctx)
 	}
 	return nil, fmt.Errorf("unknown Box field %s", name)
 }
@@ -453,13 +415,6 @@ func (m *BoxMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
-		return nil
-	case box.FieldBoxId:
-		v, ok := value.(uuid.UUID)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetBoxId(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Box field %s", name)
@@ -515,9 +470,6 @@ func (m *BoxMutation) ResetField(name string) error {
 		return nil
 	case box.FieldUpdatedAt:
 		m.ResetUpdatedAt()
-		return nil
-	case box.FieldBoxId:
-		m.ResetBoxId()
 		return nil
 	}
 	return fmt.Errorf("unknown Box field %s", name)
@@ -646,7 +598,7 @@ type PartMutation struct {
 	properties        map[int]struct{}
 	removedproperties map[int]struct{}
 	clearedproperties bool
-	box               *int
+	box               *uuid.UUID
 	clearedbox        bool
 	done              bool
 	oldValue          func(context.Context) (*Part, error)
@@ -1145,7 +1097,7 @@ func (m *PartMutation) ResetProperties() {
 }
 
 // SetBoxID sets the "box" edge to the Box entity by id.
-func (m *PartMutation) SetBoxID(id int) {
+func (m *PartMutation) SetBoxID(id uuid.UUID) {
 	m.box = &id
 }
 
@@ -1160,7 +1112,7 @@ func (m *PartMutation) BoxCleared() bool {
 }
 
 // BoxID returns the "box" edge ID in the mutation.
-func (m *PartMutation) BoxID() (id int, exists bool) {
+func (m *PartMutation) BoxID() (id uuid.UUID, exists bool) {
 	if m.box != nil {
 		return *m.box, true
 	}
@@ -1170,7 +1122,7 @@ func (m *PartMutation) BoxID() (id int, exists bool) {
 // BoxIDs returns the "box" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // BoxID instead. It exists only for internal usage by the builders.
-func (m *PartMutation) BoxIDs() (ids []int) {
+func (m *PartMutation) BoxIDs() (ids []uuid.UUID) {
 	if id := m.box; id != nil {
 		ids = append(ids, *id)
 	}
@@ -1576,10 +1528,8 @@ type PositionMutation struct {
 	id               *int
 	createdAt        *time.Time
 	updatedAt        *time.Time
-	positionId       *int
-	addpositionId    *int
 	clearedFields    map[string]struct{}
-	storedBox        *int
+	storedBox        *uuid.UUID
 	clearedstoredBox bool
 	warehouse        *int
 	clearedwarehouse bool
@@ -1758,64 +1708,8 @@ func (m *PositionMutation) ResetUpdatedAt() {
 	m.updatedAt = nil
 }
 
-// SetPositionId sets the "positionId" field.
-func (m *PositionMutation) SetPositionId(i int) {
-	m.positionId = &i
-	m.addpositionId = nil
-}
-
-// PositionId returns the value of the "positionId" field in the mutation.
-func (m *PositionMutation) PositionId() (r int, exists bool) {
-	v := m.positionId
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPositionId returns the old "positionId" field's value of the Position entity.
-// If the Position object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PositionMutation) OldPositionId(ctx context.Context) (v int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPositionId is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPositionId requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPositionId: %w", err)
-	}
-	return oldValue.PositionId, nil
-}
-
-// AddPositionId adds i to the "positionId" field.
-func (m *PositionMutation) AddPositionId(i int) {
-	if m.addpositionId != nil {
-		*m.addpositionId += i
-	} else {
-		m.addpositionId = &i
-	}
-}
-
-// AddedPositionId returns the value that was added to the "positionId" field in this mutation.
-func (m *PositionMutation) AddedPositionId() (r int, exists bool) {
-	v := m.addpositionId
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetPositionId resets all changes to the "positionId" field.
-func (m *PositionMutation) ResetPositionId() {
-	m.positionId = nil
-	m.addpositionId = nil
-}
-
 // SetStoredBoxID sets the "storedBox" edge to the Box entity by id.
-func (m *PositionMutation) SetStoredBoxID(id int) {
+func (m *PositionMutation) SetStoredBoxID(id uuid.UUID) {
 	m.storedBox = &id
 }
 
@@ -1830,7 +1724,7 @@ func (m *PositionMutation) StoredBoxCleared() bool {
 }
 
 // StoredBoxID returns the "storedBox" edge ID in the mutation.
-func (m *PositionMutation) StoredBoxID() (id int, exists bool) {
+func (m *PositionMutation) StoredBoxID() (id uuid.UUID, exists bool) {
 	if m.storedBox != nil {
 		return *m.storedBox, true
 	}
@@ -1840,7 +1734,7 @@ func (m *PositionMutation) StoredBoxID() (id int, exists bool) {
 // StoredBoxIDs returns the "storedBox" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // StoredBoxID instead. It exists only for internal usage by the builders.
-func (m *PositionMutation) StoredBoxIDs() (ids []int) {
+func (m *PositionMutation) StoredBoxIDs() (ids []uuid.UUID) {
 	if id := m.storedBox; id != nil {
 		ids = append(ids, *id)
 	}
@@ -1926,15 +1820,12 @@ func (m *PositionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PositionMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 2)
 	if m.createdAt != nil {
 		fields = append(fields, position.FieldCreatedAt)
 	}
 	if m.updatedAt != nil {
 		fields = append(fields, position.FieldUpdatedAt)
-	}
-	if m.positionId != nil {
-		fields = append(fields, position.FieldPositionId)
 	}
 	return fields
 }
@@ -1948,8 +1839,6 @@ func (m *PositionMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case position.FieldUpdatedAt:
 		return m.UpdatedAt()
-	case position.FieldPositionId:
-		return m.PositionId()
 	}
 	return nil, false
 }
@@ -1963,8 +1852,6 @@ func (m *PositionMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldCreatedAt(ctx)
 	case position.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
-	case position.FieldPositionId:
-		return m.OldPositionId(ctx)
 	}
 	return nil, fmt.Errorf("unknown Position field %s", name)
 }
@@ -1988,13 +1875,6 @@ func (m *PositionMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpdatedAt(v)
 		return nil
-	case position.FieldPositionId:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPositionId(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Position field %s", name)
 }
@@ -2002,21 +1882,13 @@ func (m *PositionMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *PositionMutation) AddedFields() []string {
-	var fields []string
-	if m.addpositionId != nil {
-		fields = append(fields, position.FieldPositionId)
-	}
-	return fields
+	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *PositionMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	case position.FieldPositionId:
-		return m.AddedPositionId()
-	}
 	return nil, false
 }
 
@@ -2025,13 +1897,6 @@ func (m *PositionMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *PositionMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case position.FieldPositionId:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddPositionId(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Position numeric field %s", name)
 }
@@ -2064,9 +1929,6 @@ func (m *PositionMutation) ResetField(name string) error {
 		return nil
 	case position.FieldUpdatedAt:
 		m.ResetUpdatedAt()
-		return nil
-	case position.FieldPositionId:
-		m.ResetPositionId()
 		return nil
 	}
 	return fmt.Errorf("unknown Position field %s", name)

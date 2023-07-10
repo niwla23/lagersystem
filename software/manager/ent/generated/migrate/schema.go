@@ -10,10 +10,9 @@ import (
 var (
 	// BoxesColumns holds the columns for the "boxes" table.
 	BoxesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "box_id", Type: field.TypeUUID, Unique: true},
 	}
 	// BoxesTable holds the schema information for the "boxes" table.
 	BoxesTable = &schema.Table{
@@ -31,7 +30,7 @@ var (
 		{Name: "description", Type: field.TypeString},
 		{Name: "amount", Type: field.TypeInt, Default: -1},
 		{Name: "image_id", Type: field.TypeUUID, Nullable: true},
-		{Name: "box_parts", Type: field.TypeInt, Nullable: true},
+		{Name: "box_parts", Type: field.TypeUUID, Nullable: true},
 	}
 	// PartsTable holds the schema information for the "parts" table.
 	PartsTable = &schema.Table{
@@ -52,8 +51,7 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "position_id", Type: field.TypeInt, Unique: true},
-		{Name: "box_position", Type: field.TypeInt, Unique: true, Nullable: true},
+		{Name: "box_position", Type: field.TypeUUID, Unique: true, Nullable: true},
 		{Name: "warehouse_positions", Type: field.TypeInt, Nullable: true},
 	}
 	// PositionsTable holds the schema information for the "positions" table.
@@ -64,13 +62,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "positions_boxes_position",
-				Columns:    []*schema.Column{PositionsColumns[4]},
+				Columns:    []*schema.Column{PositionsColumns[3]},
 				RefColumns: []*schema.Column{BoxesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "positions_warehouses_positions",
-				Columns:    []*schema.Column{PositionsColumns[5]},
+				Columns:    []*schema.Column{PositionsColumns[4]},
 				RefColumns: []*schema.Column{WarehousesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

@@ -137,13 +137,13 @@ func (pc *PartCreate) AddProperties(p ...*Property) *PartCreate {
 }
 
 // SetBoxID sets the "box" edge to the Box entity by ID.
-func (pc *PartCreate) SetBoxID(id int) *PartCreate {
+func (pc *PartCreate) SetBoxID(id uuid.UUID) *PartCreate {
 	pc.mutation.SetBoxID(id)
 	return pc
 }
 
 // SetNillableBoxID sets the "box" edge to the Box entity by ID if the given value is not nil.
-func (pc *PartCreate) SetNillableBoxID(id *int) *PartCreate {
+func (pc *PartCreate) SetNillableBoxID(id *uuid.UUID) *PartCreate {
 	if id != nil {
 		pc = pc.SetBoxID(*id)
 	}
@@ -349,7 +349,7 @@ func (pc *PartCreate) createSpec() (*Part, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
+					Type:   field.TypeUUID,
 					Column: box.FieldID,
 				},
 			},

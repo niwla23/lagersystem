@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/box"
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
@@ -56,12 +55,6 @@ func (bu *BoxUpdate) SetNillableUpdatedAt(t *time.Time) *BoxUpdate {
 	if t != nil {
 		bu.SetUpdatedAt(*t)
 	}
-	return bu
-}
-
-// SetBoxId sets the "boxId" field.
-func (bu *BoxUpdate) SetBoxId(u uuid.UUID) *BoxUpdate {
-	bu.mutation.SetBoxId(u)
 	return bu
 }
 
@@ -164,7 +157,7 @@ func (bu *BoxUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Table:   box.Table,
 			Columns: box.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeUUID,
 				Column: box.FieldID,
 			},
 		},
@@ -181,9 +174,6 @@ func (bu *BoxUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := bu.mutation.UpdatedAt(); ok {
 		_spec.SetField(box.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if value, ok := bu.mutation.BoxId(); ok {
-		_spec.SetField(box.FieldBoxId, field.TypeUUID, value)
 	}
 	if bu.mutation.PartsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -322,12 +312,6 @@ func (buo *BoxUpdateOne) SetNillableUpdatedAt(t *time.Time) *BoxUpdateOne {
 	return buo
 }
 
-// SetBoxId sets the "boxId" field.
-func (buo *BoxUpdateOne) SetBoxId(u uuid.UUID) *BoxUpdateOne {
-	buo.mutation.SetBoxId(u)
-	return buo
-}
-
 // AddPartIDs adds the "parts" edge to the Part entity by IDs.
 func (buo *BoxUpdateOne) AddPartIDs(ids ...int) *BoxUpdateOne {
 	buo.mutation.AddPartIDs(ids...)
@@ -434,7 +418,7 @@ func (buo *BoxUpdateOne) sqlSave(ctx context.Context) (_node *Box, err error) {
 			Table:   box.Table,
 			Columns: box.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeUUID,
 				Column: box.FieldID,
 			},
 		},
@@ -468,9 +452,6 @@ func (buo *BoxUpdateOne) sqlSave(ctx context.Context) (_node *Box, err error) {
 	}
 	if value, ok := buo.mutation.UpdatedAt(); ok {
 		_spec.SetField(box.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if value, ok := buo.mutation.BoxId(); ok {
-		_spec.SetField(box.FieldBoxId, field.TypeUUID, value)
 	}
 	if buo.mutation.PartsCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -1,12 +1,17 @@
-import { useLoaderData, useNavigate } from "react-router-dom"
+import { useLoaderData, useNavigate, useRevalidator } from "react-router-dom"
 import { PartModel, UpdatePartData } from "../types"
 import { useState } from "react"
-import { SubmitHandler, useForm } from "react-hook-form"
+import { Controller, SubmitHandler, useForm } from "react-hook-form"
 import { AddPartDataForm } from "../components/partAddDataForm"
 import * as api from "../api"
+import TagSelector from "../components/tagSelector"
+import Swal from "sweetalert2"
+import { isAxiosError } from "axios"
 
 export default function EditPart() {
   const navigate = useNavigate()
+  let revalidator = useRevalidator()
+
   const partData = useLoaderData() as PartModel
 
   let [selectedFile, setSelectedFile] = useState<File | undefined>(undefined)
@@ -17,12 +22,11 @@ export default function EditPart() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<AddPartDataForm>()
 
   const onSubmit: SubmitHandler<AddPartDataForm> = (data) => {
-    console.log(data)
-
     let updateData: UpdatePartData = {
       name: data.partName,
       description: data.description,
@@ -34,12 +38,10 @@ export default function EditPart() {
 
     // props.submit(creationData, selectedFile)
     api.updatePart(partData.id, updateData, selectedFile).then((r) => {
-      console.log("huh")
       if (r.status == 200) {
         navigate("/")
       }
     })
-    console.log(updateData)
   }
 
   const handleDelete = async (e: Event) => {
@@ -53,11 +55,86 @@ export default function EditPart() {
     }
   }
 
+  const deliverEmptyBox = async () => {
+    try {
+      const emptyBox = await api.getEmptyBox()
+      await api.deliverBox(emptyBox.id, "1")
+    } catch (e) {
+      alert("no free box found")
+      return
+    }
+  }
+
+  const connectToBoxInScanner = async () => {
+    // Show loader before making the API call
+    const swalWithLoader = Swal.mixin({
+      title: "Scanning box...",
+      allowOutsideClick: false,
+      customClass: {},
+      didOpen: () => {
+        Swal.showLoading()
+      },
+    })
+
+    swalWithLoader.fire()
+
+    try {
+      const resp = await api.getBoxFromScanner()
+      await api.updatePart(
+        partData.id,
+        {
+          ...(partData as UpdatePartData),
+          boxId: resp.boxId,
+          tags: partData.tags?.map((i) => i.name) || [],
+        },
+        undefined
+      )
+
+      // Hide the loader after API calls are complete
+      swalWithLoader.close()
+      revalidator.revalidate()
+    } catch (error) {
+      if (isAxiosError(error)) {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: error.response?.data?.message || error.message,
+        })
+      } else {
+        Swal.fire("error")
+      }
+    }
+  }
+
+  const disconnectBox = async () => {
+    await api.updatePart(
+      partData.id,
+      {
+        ...(partData as UpdatePartData),
+        boxId: null,
+        tags: partData.tags?.map((i) => i.name) || [],
+      },
+      undefined
+    )
+    Swal.fire({
+      icon: "success",
+      title: "Box disconnected",
+    })
+    revalidator.revalidate()
+  }
+
   let imgPreview = <span>No image available.</span>
   if (selectedFile) {
     imgPreview = <img src={URL.createObjectURL(selectedFile)} className="h-32 w-32 object-contain" />
   } else if (api.getImageUrl(partData.imageId)) {
     imgPreview = <img src={api.getImageUrl(partData.imageId)} className="h-32 w-32 object-contain" />
+  }
+
+  let boxManagementState = "No box assigned"
+  if (partData.box?.position) {
+    boxManagementState = `Box ${partData.box.id} at position ${partData.box.position}`
+  } else if (partData.box?.id) {
+    boxManagementState = "Box " + partData.box.id
   }
 
   return (
@@ -100,21 +177,45 @@ export default function EditPart() {
             <label className="label">
               <span className="label-text">Tags</span>
             </label>
-            <input
+            {/* <input
               type="text"
               placeholder="Seperated by comma (e.g.: resistor,electronics)"
               className="input input-bordered w-full"
               {...register("tags")}
               defaultValue={partData.tags?.map((i) => i.name).join(",")}
+            /> */}
+            <Controller
+              control={control}
+              rules={{ required: true, minLength: 1 }}
+              name="tags"
+              render={({ field }) => <TagSelector label="Tags" {...field} error={errors.tags?.type?.toString()} />}
+              defaultValue={partData.tags?.map((i) => i.name).join(",")}
             />
           </div>
-          <button onClick={handleSubmit(onSubmit)} className="btn btn-primary w-full mt-4">
-            Update part
-          </button>
-          <button onClick={handleDelete} className="btn btn-warning w-full mt-2">
-            Delete part
-          </button>
+          <div className="flex gap-2 mt-2">
+            <button onClick={handleDelete} className="btn btn-warning flex-1">
+              Delete part
+            </button>
+            <button onClick={handleSubmit(onSubmit)} className="btn btn-primary flex-1">
+              Update part
+            </button>
+          </div>
         </form>
+        <div className="mt-16">
+          <h2 className="font-bold text-lg pb-2">Box management</h2>
+          <p>{boxManagementState} </p>
+          <div className="flex flex-col gap-2">
+            <button onClick={deliverEmptyBox} className="btn btn-primary w-full">
+              Deliver empty box
+            </button>
+            <button onClick={connectToBoxInScanner} className="btn btn-primary w-full">
+              Part is in the scanner, save it
+            </button>
+            <button onClick={disconnectBox} className="btn btn-error w-full">
+              Part is not in this box
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   )

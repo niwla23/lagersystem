@@ -75,7 +75,7 @@ export default function Layout() {
           </button>
           <div className="avatar pl-2">
             <div className="h-8 rounded-full">
-              <img src="https://daisyui.com/images/stock/photo-1534528741775-53994a69daeb.jpg" />
+              <img src={`https://www.gravatar.com/avatar/43661af400162079e6dcadef7debd43a`} />
             </div>
           </div>
         </section>

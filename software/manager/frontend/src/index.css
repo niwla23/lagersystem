@@ -1,3 +1,40 @@
+@import '@sweetalert2/theme-dark/dark.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  /* .my-react-select-container {
+  } */
+  .my-react-select-container .my-react-select__control {
+    @apply bg-base-100 border-none rounded-md p-2;
+  }
+
+
+
+  .my-react-select-container .my-react-select__menu {
+    @apply bg-base-100 border-[1px] border-white border-opacity-25 shadow-xl;
+  }
+
+  /* .my-react-select-container .my-react-select__option {
+    @apply text-white bg-base-100 focus:bg-base-200 p-2;
+  } */
+
+  .my-react-select-container .my-react-select__indicator-separator {
+    @apply bg-transparent;
+  }
+
+  .my-react-select-container .my-react-select__input-container,
+  .my-react-select-container .my-react-select__placeholder,
+  .my-react-select-container .my-react-select__single-value {
+    @apply text-white font-bold;
+  }
+
+  .my-react-select-container .my-react-select__multi-value {
+    @apply bg-accent ;
+  }
+
+  .my-react-select-container .my-react-select__multi-value__remove {
+    @apply text-black;
+  }
+}

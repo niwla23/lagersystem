@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"github.com/google/uuid"
 )
 
 const (
@@ -17,8 +18,6 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updatedat field in the database.
 	FieldUpdatedAt = "updated_at"
-	// FieldBoxId holds the string denoting the boxid field in the database.
-	FieldBoxId = "box_id"
 	// EdgeParts holds the string denoting the parts edge name in mutations.
 	EdgeParts = "parts"
 	// EdgePosition holds the string denoting the position edge name in mutations.
@@ -46,7 +45,6 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
-	FieldBoxId,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -70,4 +68,6 @@ var (
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updatedAt" field.
 	DefaultUpdatedAt func() time.Time
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() uuid.UUID
 )

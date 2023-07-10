@@ -6,7 +6,7 @@ export default function StoreBox() {
 
   const storeBox = async () => {
     setStage("storing")
-    const resp = await api.storeBoxByScanner()
+    const resp = await api.clearIo()
     setStage("done")
   }
 
@@ -39,7 +39,7 @@ export default function StoreBox() {
   return (
     <section className="flex-grow h-full grid items-center justify-center">
       <div className="max-w-2xl">
-        <h1 className="text-xl font-bold">Here you can store a box that you put on the scanner</h1>
+        <h1 className="text-xl font-bold">Clearing IO Slots...</h1>
         {mainContent}
       </div>
     </section>

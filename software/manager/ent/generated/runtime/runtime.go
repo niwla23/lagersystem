@@ -5,6 +5,7 @@ package runtime
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/box"
 	"github.com/niwla23/lagersystem/manager/ent/generated/part"
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
@@ -23,13 +24,17 @@ func init() {
 	boxFields := schema.Box{}.Fields()
 	_ = boxFields
 	// boxDescCreatedAt is the schema descriptor for createdAt field.
-	boxDescCreatedAt := boxFields[0].Descriptor()
+	boxDescCreatedAt := boxFields[1].Descriptor()
 	// box.DefaultCreatedAt holds the default value on creation for the createdAt field.
 	box.DefaultCreatedAt = boxDescCreatedAt.Default.(func() time.Time)
 	// boxDescUpdatedAt is the schema descriptor for updatedAt field.
-	boxDescUpdatedAt := boxFields[1].Descriptor()
+	boxDescUpdatedAt := boxFields[2].Descriptor()
 	// box.DefaultUpdatedAt holds the default value on creation for the updatedAt field.
 	box.DefaultUpdatedAt = boxDescUpdatedAt.Default.(func() time.Time)
+	// boxDescID is the schema descriptor for id field.
+	boxDescID := boxFields[0].Descriptor()
+	// box.DefaultID holds the default value on creation for the id field.
+	box.DefaultID = boxDescID.Default.(func() uuid.UUID)
 	partHooks := schema.Part{}.Hooks()
 	part.Hooks[0] = partHooks[0]
 	partFields := schema.Part{}.Fields()
@@ -66,10 +71,6 @@ func init() {
 	positionDescUpdatedAt := positionFields[1].Descriptor()
 	// position.DefaultUpdatedAt holds the default value on creation for the updatedAt field.
 	position.DefaultUpdatedAt = positionDescUpdatedAt.Default.(func() time.Time)
-	// positionDescPositionId is the schema descriptor for positionId field.
-	positionDescPositionId := positionFields[2].Descriptor()
-	// position.PositionIdValidator is a validator for the "positionId" field. It is called by the builders before save.
-	position.PositionIdValidator = positionDescPositionId.Validators[0].(func(int) error)
 	propertyHooks := schema.Property{}.Hooks()
 	property.Hooks[0] = propertyHooks[0]
 	property.Hooks[1] = propertyHooks[1]

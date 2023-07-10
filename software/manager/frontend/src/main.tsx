@@ -23,6 +23,9 @@ const router = createBrowserRouter([
       {
         path: "/boxes",
         element: <Boxes />,
+        loader: async ({params}) => {
+          return await api.getPositions();
+        },
       },
       {
         path: "/boxes/store",

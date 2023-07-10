@@ -20,9 +20,9 @@ type Box struct {
 // Fields of the Box.
 func (Box) Fields() []ent.Field {
 	return []ent.Field{
+		field.UUID("id", uuid.New()).Default(uuid.New).Immutable(),
 		field.Time("createdAt").Default(time.Now),
 		field.Time("updatedAt").Default(time.Now),
-		field.UUID("boxId", uuid.UUID{}).Unique(),
 	}
 }
 

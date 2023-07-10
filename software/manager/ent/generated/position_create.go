@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/box"
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
 	"github.com/niwla23/lagersystem/manager/ent/generated/warehouse"
@@ -50,20 +51,14 @@ func (pc *PositionCreate) SetNillableUpdatedAt(t *time.Time) *PositionCreate {
 	return pc
 }
 
-// SetPositionId sets the "positionId" field.
-func (pc *PositionCreate) SetPositionId(i int) *PositionCreate {
-	pc.mutation.SetPositionId(i)
-	return pc
-}
-
 // SetStoredBoxID sets the "storedBox" edge to the Box entity by ID.
-func (pc *PositionCreate) SetStoredBoxID(id int) *PositionCreate {
+func (pc *PositionCreate) SetStoredBoxID(id uuid.UUID) *PositionCreate {
 	pc.mutation.SetStoredBoxID(id)
 	return pc
 }
 
 // SetNillableStoredBoxID sets the "storedBox" edge to the Box entity by ID if the given value is not nil.
-func (pc *PositionCreate) SetNillableStoredBoxID(id *int) *PositionCreate {
+func (pc *PositionCreate) SetNillableStoredBoxID(id *uuid.UUID) *PositionCreate {
 	if id != nil {
 		pc = pc.SetStoredBoxID(*id)
 	}
@@ -156,14 +151,6 @@ func (pc *PositionCreate) check() error {
 	if _, ok := pc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updatedAt", err: errors.New(`generated: missing required field "Position.updatedAt"`)}
 	}
-	if _, ok := pc.mutation.PositionId(); !ok {
-		return &ValidationError{Name: "positionId", err: errors.New(`generated: missing required field "Position.positionId"`)}
-	}
-	if v, ok := pc.mutation.PositionId(); ok {
-		if err := position.PositionIdValidator(v); err != nil {
-			return &ValidationError{Name: "positionId", err: fmt.Errorf(`generated: validator failed for field "Position.positionId": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -204,10 +191,6 @@ func (pc *PositionCreate) createSpec() (*Position, *sqlgraph.CreateSpec) {
 		_spec.SetField(position.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := pc.mutation.PositionId(); ok {
-		_spec.SetField(position.FieldPositionId, field.TypeInt, value)
-		_node.PositionId = value
-	}
 	if nodes := pc.mutation.StoredBoxIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
@@ -217,7 +200,7 @@ func (pc *PositionCreate) createSpec() (*Position, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
+					Type:   field.TypeUUID,
 					Column: box.FieldID,
 				},
 			},

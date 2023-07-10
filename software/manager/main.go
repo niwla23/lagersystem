@@ -101,8 +101,8 @@ func main() {
 	boxHandlers := app.Group("/boxes")
 	handlers.RegisterBoxRoutes(boxHandlers, database.Client, ctx)
 
-	storeHandlers := app.Group("/store")
-	handlers.RegisterStoreRoutes(storeHandlers, database.Client, ctx)
+	tagHandlers := app.Group("/tags")
+	handlers.RegisterTagRoutes(tagHandlers, database.Client, ctx)
 
 	warehouseHandlers := app.Group("/warehouses")
 	handlers.RegisterWarehouseRoutes(warehouseHandlers, database.Client, ctx)

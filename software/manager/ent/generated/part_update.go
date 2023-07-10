@@ -158,13 +158,13 @@ func (pu *PartUpdate) AddProperties(p ...*Property) *PartUpdate {
 }
 
 // SetBoxID sets the "box" edge to the Box entity by ID.
-func (pu *PartUpdate) SetBoxID(id int) *PartUpdate {
+func (pu *PartUpdate) SetBoxID(id uuid.UUID) *PartUpdate {
 	pu.mutation.SetBoxID(id)
 	return pu
 }
 
 // SetNillableBoxID sets the "box" edge to the Box entity by ID if the given value is not nil.
-func (pu *PartUpdate) SetNillableBoxID(id *int) *PartUpdate {
+func (pu *PartUpdate) SetNillableBoxID(id *uuid.UUID) *PartUpdate {
 	if id != nil {
 		pu = pu.SetBoxID(*id)
 	}
@@ -431,7 +431,7 @@ func (pu *PartUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
+					Type:   field.TypeUUID,
 					Column: box.FieldID,
 				},
 			},
@@ -447,7 +447,7 @@ func (pu *PartUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
+					Type:   field.TypeUUID,
 					Column: box.FieldID,
 				},
 			},
@@ -603,13 +603,13 @@ func (puo *PartUpdateOne) AddProperties(p ...*Property) *PartUpdateOne {
 }
 
 // SetBoxID sets the "box" edge to the Box entity by ID.
-func (puo *PartUpdateOne) SetBoxID(id int) *PartUpdateOne {
+func (puo *PartUpdateOne) SetBoxID(id uuid.UUID) *PartUpdateOne {
 	puo.mutation.SetBoxID(id)
 	return puo
 }
 
 // SetNillableBoxID sets the "box" edge to the Box entity by ID if the given value is not nil.
-func (puo *PartUpdateOne) SetNillableBoxID(id *int) *PartUpdateOne {
+func (puo *PartUpdateOne) SetNillableBoxID(id *uuid.UUID) *PartUpdateOne {
 	if id != nil {
 		puo = puo.SetBoxID(*id)
 	}
@@ -900,7 +900,7 @@ func (puo *PartUpdateOne) sqlSave(ctx context.Context) (_node *Part, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
+					Type:   field.TypeUUID,
 					Column: box.FieldID,
 				},
 			},
@@ -916,7 +916,7 @@ func (puo *PartUpdateOne) sqlSave(ctx context.Context) (_node *Part, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
+					Type:   field.TypeUUID,
 					Column: box.FieldID,
 				},
 			},

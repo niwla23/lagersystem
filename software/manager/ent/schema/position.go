@@ -21,7 +21,6 @@ func (Position) Fields() []ent.Field {
 	return []ent.Field{
 		field.Time("createdAt").Default(time.Now),
 		field.Time("updatedAt").Default(time.Now),
-		field.Int("positionId").Positive().Unique(),
 	}
 }
 

@@ -51,9 +51,17 @@ func (bc *BoxCreate) SetNillableUpdatedAt(t *time.Time) *BoxCreate {
 	return bc
 }
 
-// SetBoxId sets the "boxId" field.
-func (bc *BoxCreate) SetBoxId(u uuid.UUID) *BoxCreate {
-	bc.mutation.SetBoxId(u)
+// SetID sets the "id" field.
+func (bc *BoxCreate) SetID(u uuid.UUID) *BoxCreate {
+	bc.mutation.SetID(u)
+	return bc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (bc *BoxCreate) SetNillableID(u *uuid.UUID) *BoxCreate {
+	if u != nil {
+		bc.SetID(*u)
+	}
 	return bc
 }
 
@@ -142,6 +150,13 @@ func (bc *BoxCreate) defaults() error {
 		v := box.DefaultUpdatedAt()
 		bc.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := bc.mutation.ID(); !ok {
+		if box.DefaultID == nil {
+			return fmt.Errorf("generated: uninitialized box.DefaultID (forgotten import generated/runtime?)")
+		}
+		v := box.DefaultID()
+		bc.mutation.SetID(v)
+	}
 	return nil
 }
 
@@ -152,9 +167,6 @@ func (bc *BoxCreate) check() error {
 	}
 	if _, ok := bc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updatedAt", err: errors.New(`generated: missing required field "Box.updatedAt"`)}
-	}
-	if _, ok := bc.mutation.BoxId(); !ok {
-		return &ValidationError{Name: "boxId", err: errors.New(`generated: missing required field "Box.boxId"`)}
 	}
 	return nil
 }
@@ -170,8 +182,13 @@ func (bc *BoxCreate) sqlSave(ctx context.Context) (*Box, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	bc.mutation.id = &_node.ID
 	bc.mutation.done = true
 	return _node, nil
@@ -183,11 +200,15 @@ func (bc *BoxCreate) createSpec() (*Box, *sqlgraph.CreateSpec) {
 		_spec = &sqlgraph.CreateSpec{
 			Table: box.Table,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeUUID,
 				Column: box.FieldID,
 			},
 		}
 	)
+	if id, ok := bc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
 	if value, ok := bc.mutation.CreatedAt(); ok {
 		_spec.SetField(box.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
@@ -195,10 +216,6 @@ func (bc *BoxCreate) createSpec() (*Box, *sqlgraph.CreateSpec) {
 	if value, ok := bc.mutation.UpdatedAt(); ok {
 		_spec.SetField(box.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
-	}
-	if value, ok := bc.mutation.BoxId(); ok {
-		_spec.SetField(box.FieldBoxId, field.TypeUUID, value)
-		_node.BoxId = value
 	}
 	if nodes := bc.mutation.PartsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -282,10 +299,6 @@ func (bcb *BoxCreateBulk) Save(ctx context.Context) ([]*Box, error) {
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

@@ -36,7 +36,7 @@ type Part struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PartQuery when eager-loading is set.
 	Edges     PartEdges `json:"-"`
-	box_parts *int
+	box_parts *uuid.UUID
 }
 
 // PartEdges holds the relations/edges for other nodes in the graph.
@@ -99,7 +99,7 @@ func (*Part) scanValues(columns []string) ([]any, error) {
 		case part.FieldImageId:
 			values[i] = new(uuid.UUID)
 		case part.ForeignKeys[0]: // box_parts
-			values[i] = new(sql.NullInt64)
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Part", columns[i])
 		}
@@ -164,11 +164,11 @@ func (pa *Part) assignValues(columns []string, values []any) error {
 				pa.ImageId = *value
 			}
 		case part.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field box_parts", value)
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field box_parts", values[i])
 			} else if value.Valid {
-				pa.box_parts = new(int)
-				*pa.box_parts = int(value.Int64)
+				pa.box_parts = new(uuid.UUID)
+				*pa.box_parts = *value.S.(*uuid.UUID)
 			}
 		}
 	}

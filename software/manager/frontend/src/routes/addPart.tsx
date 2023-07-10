@@ -23,7 +23,7 @@ export default function AddPart() {
 
   const storeBox = async () => {
     setStage("storing")
-    const resp = await api.storeBoxByScanner()
+    const resp = await api.clearScanner()
     if (!partId) {
       alert("partId not set")
       return
@@ -49,8 +49,7 @@ export default function AddPart() {
         // user wants to store part in an empty box, find one and deliver it
         try {
           const emptyBox = await api.getEmptyBox()
-          console.log(emptyBox)
-          deliverBoxForPutIn(emptyBox.boxId)
+          deliverBoxForPutIn(emptyBox.id)
         } catch (e) {
           alert("no free box found")
           navigate("/")
@@ -96,8 +95,8 @@ export default function AddPart() {
   } else if (stage === "confirmPutPartIn") {
     content = (
       <div className="h-full grid place-items-center">
-        <div className="w-min flex flex-col gap-2 justify-center">
-          <h2 className="font-bold text-xl text-center whitespace-nowrap">Please put the parts in the box and place it on the scanner</h2>
+        <div className="w-full flex flex-col gap-2 justify-center">
+          <h2 className="font-bold text-xl text-center">Please put the parts in the box and place it on the scanner</h2>
           <button className="btn btn-warning whitespace-nowrap" onClick={() => storeBox()}>
             Store box now
           </button>

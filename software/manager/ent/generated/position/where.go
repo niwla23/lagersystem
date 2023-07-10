@@ -65,11 +65,6 @@ func UpdatedAt(v time.Time) predicate.Position {
 	return predicate.Position(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
-// PositionId applies equality check predicate on the "positionId" field. It's identical to PositionIdEQ.
-func PositionId(v int) predicate.Position {
-	return predicate.Position(sql.FieldEQ(FieldPositionId, v))
-}
-
 // CreatedAtEQ applies the EQ predicate on the "createdAt" field.
 func CreatedAtEQ(v time.Time) predicate.Position {
 	return predicate.Position(sql.FieldEQ(FieldCreatedAt, v))
@@ -148,46 +143,6 @@ func UpdatedAtLT(v time.Time) predicate.Position {
 // UpdatedAtLTE applies the LTE predicate on the "updatedAt" field.
 func UpdatedAtLTE(v time.Time) predicate.Position {
 	return predicate.Position(sql.FieldLTE(FieldUpdatedAt, v))
-}
-
-// PositionIdEQ applies the EQ predicate on the "positionId" field.
-func PositionIdEQ(v int) predicate.Position {
-	return predicate.Position(sql.FieldEQ(FieldPositionId, v))
-}
-
-// PositionIdNEQ applies the NEQ predicate on the "positionId" field.
-func PositionIdNEQ(v int) predicate.Position {
-	return predicate.Position(sql.FieldNEQ(FieldPositionId, v))
-}
-
-// PositionIdIn applies the In predicate on the "positionId" field.
-func PositionIdIn(vs ...int) predicate.Position {
-	return predicate.Position(sql.FieldIn(FieldPositionId, vs...))
-}
-
-// PositionIdNotIn applies the NotIn predicate on the "positionId" field.
-func PositionIdNotIn(vs ...int) predicate.Position {
-	return predicate.Position(sql.FieldNotIn(FieldPositionId, vs...))
-}
-
-// PositionIdGT applies the GT predicate on the "positionId" field.
-func PositionIdGT(v int) predicate.Position {
-	return predicate.Position(sql.FieldGT(FieldPositionId, v))
-}
-
-// PositionIdGTE applies the GTE predicate on the "positionId" field.
-func PositionIdGTE(v int) predicate.Position {
-	return predicate.Position(sql.FieldGTE(FieldPositionId, v))
-}
-
-// PositionIdLT applies the LT predicate on the "positionId" field.
-func PositionIdLT(v int) predicate.Position {
-	return predicate.Position(sql.FieldLT(FieldPositionId, v))
-}
-
-// PositionIdLTE applies the LTE predicate on the "positionId" field.
-func PositionIdLTE(v int) predicate.Position {
-	return predicate.Position(sql.FieldLTE(FieldPositionId, v))
 }
 
 // HasStoredBox applies the HasEdge predicate on the "storedBox" edge.

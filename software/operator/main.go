@@ -20,31 +20,6 @@ func main() {
 	app := fiber.New(fiber.Config{AppName: "Storagesystem Operator Service"})
 
 	app.Get("/scanBoxId", func(c *fiber.Ctx) error {
-		// file, err := os.Open("qrcode.jpg")
-		// if err != nil {
-		// 	return fiber.NewError(fiber.StatusInternalServerError, "cant read image file")
-		// }
-
-		// img, format, err := image.Decode(file)
-		// if err != nil {
-		// 	fmt.Println(err, format)
-		// 	return fiber.NewError(fiber.StatusInternalServerError, "cant decode image file")
-		// }
-
-		// bmp, err := gozxing.NewBinaryBitmapFromImage(img)
-		// if err != nil {
-		// 	return fiber.NewError(fiber.StatusInternalServerError, "cant convert image file")
-		// }
-
-		// // decode image
-		// qrReader := qrcode.NewQRCodeReader()
-		// result, err := qrReader.Decode(bmp, nil)
-		// if err != nil {
-		// 	return fiber.NewError(fiber.StatusInternalServerError, "cant read qr code")
-		// }
-
-		// boxId := result.GetText()
-
 		imgdata, err := ioutil.ReadFile("qrcode.jpg")
 		if err != nil {
 			log.Fatal(":", err)

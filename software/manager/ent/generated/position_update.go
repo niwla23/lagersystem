@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/niwla23/lagersystem/manager/ent/generated/box"
 	"github.com/niwla23/lagersystem/manager/ent/generated/position"
 	"github.com/niwla23/lagersystem/manager/ent/generated/predicate"
@@ -58,27 +59,14 @@ func (pu *PositionUpdate) SetNillableUpdatedAt(t *time.Time) *PositionUpdate {
 	return pu
 }
 
-// SetPositionId sets the "positionId" field.
-func (pu *PositionUpdate) SetPositionId(i int) *PositionUpdate {
-	pu.mutation.ResetPositionId()
-	pu.mutation.SetPositionId(i)
-	return pu
-}
-
-// AddPositionId adds i to the "positionId" field.
-func (pu *PositionUpdate) AddPositionId(i int) *PositionUpdate {
-	pu.mutation.AddPositionId(i)
-	return pu
-}
-
 // SetStoredBoxID sets the "storedBox" edge to the Box entity by ID.
-func (pu *PositionUpdate) SetStoredBoxID(id int) *PositionUpdate {
+func (pu *PositionUpdate) SetStoredBoxID(id uuid.UUID) *PositionUpdate {
 	pu.mutation.SetStoredBoxID(id)
 	return pu
 }
 
 // SetNillableStoredBoxID sets the "storedBox" edge to the Box entity by ID if the given value is not nil.
-func (pu *PositionUpdate) SetNillableStoredBoxID(id *int) *PositionUpdate {
+func (pu *PositionUpdate) SetNillableStoredBoxID(id *uuid.UUID) *PositionUpdate {
 	if id != nil {
 		pu = pu.SetStoredBoxID(*id)
 	}
@@ -153,20 +141,7 @@ func (pu *PositionUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (pu *PositionUpdate) check() error {
-	if v, ok := pu.mutation.PositionId(); ok {
-		if err := position.PositionIdValidator(v); err != nil {
-			return &ValidationError{Name: "positionId", err: fmt.Errorf(`generated: validator failed for field "Position.positionId": %w`, err)}
-		}
-	}
-	return nil
-}
-
 func (pu *PositionUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := pu.check(); err != nil {
-		return n, err
-	}
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   position.Table,
@@ -190,12 +165,6 @@ func (pu *PositionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := pu.mutation.UpdatedAt(); ok {
 		_spec.SetField(position.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := pu.mutation.PositionId(); ok {
-		_spec.SetField(position.FieldPositionId, field.TypeInt, value)
-	}
-	if value, ok := pu.mutation.AddedPositionId(); ok {
-		_spec.AddField(position.FieldPositionId, field.TypeInt, value)
-	}
 	if pu.mutation.StoredBoxCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
@@ -205,7 +174,7 @@ func (pu *PositionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
+					Type:   field.TypeUUID,
 					Column: box.FieldID,
 				},
 			},
@@ -221,7 +190,7 @@ func (pu *PositionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
+					Type:   field.TypeUUID,
 					Column: box.FieldID,
 				},
 			},
@@ -314,27 +283,14 @@ func (puo *PositionUpdateOne) SetNillableUpdatedAt(t *time.Time) *PositionUpdate
 	return puo
 }
 
-// SetPositionId sets the "positionId" field.
-func (puo *PositionUpdateOne) SetPositionId(i int) *PositionUpdateOne {
-	puo.mutation.ResetPositionId()
-	puo.mutation.SetPositionId(i)
-	return puo
-}
-
-// AddPositionId adds i to the "positionId" field.
-func (puo *PositionUpdateOne) AddPositionId(i int) *PositionUpdateOne {
-	puo.mutation.AddPositionId(i)
-	return puo
-}
-
 // SetStoredBoxID sets the "storedBox" edge to the Box entity by ID.
-func (puo *PositionUpdateOne) SetStoredBoxID(id int) *PositionUpdateOne {
+func (puo *PositionUpdateOne) SetStoredBoxID(id uuid.UUID) *PositionUpdateOne {
 	puo.mutation.SetStoredBoxID(id)
 	return puo
 }
 
 // SetNillableStoredBoxID sets the "storedBox" edge to the Box entity by ID if the given value is not nil.
-func (puo *PositionUpdateOne) SetNillableStoredBoxID(id *int) *PositionUpdateOne {
+func (puo *PositionUpdateOne) SetNillableStoredBoxID(id *uuid.UUID) *PositionUpdateOne {
 	if id != nil {
 		puo = puo.SetStoredBoxID(*id)
 	}
@@ -416,20 +372,7 @@ func (puo *PositionUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (puo *PositionUpdateOne) check() error {
-	if v, ok := puo.mutation.PositionId(); ok {
-		if err := position.PositionIdValidator(v); err != nil {
-			return &ValidationError{Name: "positionId", err: fmt.Errorf(`generated: validator failed for field "Position.positionId": %w`, err)}
-		}
-	}
-	return nil
-}
-
 func (puo *PositionUpdateOne) sqlSave(ctx context.Context) (_node *Position, err error) {
-	if err := puo.check(); err != nil {
-		return _node, err
-	}
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   position.Table,
@@ -470,12 +413,6 @@ func (puo *PositionUpdateOne) sqlSave(ctx context.Context) (_node *Position, err
 	if value, ok := puo.mutation.UpdatedAt(); ok {
 		_spec.SetField(position.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := puo.mutation.PositionId(); ok {
-		_spec.SetField(position.FieldPositionId, field.TypeInt, value)
-	}
-	if value, ok := puo.mutation.AddedPositionId(); ok {
-		_spec.AddField(position.FieldPositionId, field.TypeInt, value)
-	}
 	if puo.mutation.StoredBoxCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
@@ -485,7 +422,7 @@ func (puo *PositionUpdateOne) sqlSave(ctx context.Context) (_node *Position, err
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
+					Type:   field.TypeUUID,
 					Column: box.FieldID,
 				},
 			},
@@ -501,7 +438,7 @@ func (puo *PositionUpdateOne) sqlSave(ctx context.Context) (_node *Position, err
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
+					Type:   field.TypeUUID,
 					Column: box.FieldID,
 				},
 			},

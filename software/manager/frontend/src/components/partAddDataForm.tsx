@@ -1,6 +1,7 @@
 import { useRef, useState } from "react"
-import { useForm, SubmitHandler } from "react-hook-form"
+import { useForm, SubmitHandler, Controller } from "react-hook-form"
 import { CreatePartData } from "../types"
+import TagSelector from "./tagSelector"
 
 export type AddPartDataForm = {
   partName: string
@@ -23,16 +24,20 @@ export default function PartAddDataForm(props: Props) {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<AddPartDataForm>()
 
   const onSubmit: SubmitHandler<AddPartDataForm> = (data) => {
-    console.log(data)
+
+    let tags = data.tags.split(",").map((tag) => tag.trim())
+    // remove empty tags
+    tags = tags.filter((t) => t !== "")
 
     let creationData: CreatePartData = {
       name: data.partName,
       description: data.description,
-      tags: data.tags.split(","),
+      tags: tags,
       properties: {},
       amount: -1,
     }
@@ -68,12 +73,26 @@ export default function PartAddDataForm(props: Props) {
         <label className="label">
           <span className="label-text">Tags</span>
         </label>
-        <input
+        {/* <TagSelector /> */}
+        <Controller
+            control={control}
+            rules={{ required: true, minLength: 1 }}
+            name="tags"
+            render={({ field }) => (
+              <TagSelector
+                isMulti
+                label="Tags"
+                {...field}
+                error={errors.tags?.type?.toString()}
+              />
+            )}
+          />
+        {/* <input
           type="text"
           placeholder="Seperated by comma (e.g.: resistor,electronics)"
           className="input input-bordered w-full"
           {...register("tags")}
-        />
+        /> */}
       </div>
 
       <button onClick={handleSubmit(onSubmit)} className="btn btn-primary w-full mt-4">

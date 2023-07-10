@@ -12,47 +12,47 @@ import (
 )
 
 // ID filters vertices based on their ID field.
-func ID(id int) predicate.Box {
+func ID(id uuid.UUID) predicate.Box {
 	return predicate.Box(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id int) predicate.Box {
+func IDEQ(id uuid.UUID) predicate.Box {
 	return predicate.Box(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id int) predicate.Box {
+func IDNEQ(id uuid.UUID) predicate.Box {
 	return predicate.Box(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...int) predicate.Box {
+func IDIn(ids ...uuid.UUID) predicate.Box {
 	return predicate.Box(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...int) predicate.Box {
+func IDNotIn(ids ...uuid.UUID) predicate.Box {
 	return predicate.Box(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id int) predicate.Box {
+func IDGT(id uuid.UUID) predicate.Box {
 	return predicate.Box(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id int) predicate.Box {
+func IDGTE(id uuid.UUID) predicate.Box {
 	return predicate.Box(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id int) predicate.Box {
+func IDLT(id uuid.UUID) predicate.Box {
 	return predicate.Box(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id int) predicate.Box {
+func IDLTE(id uuid.UUID) predicate.Box {
 	return predicate.Box(sql.FieldLTE(FieldID, id))
 }
 
@@ -64,11 +64,6 @@ func CreatedAt(v time.Time) predicate.Box {
 // UpdatedAt applies equality check predicate on the "updatedAt" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.Box {
 	return predicate.Box(sql.FieldEQ(FieldUpdatedAt, v))
-}
-
-// BoxId applies equality check predicate on the "boxId" field. It's identical to BoxIdEQ.
-func BoxId(v uuid.UUID) predicate.Box {
-	return predicate.Box(sql.FieldEQ(FieldBoxId, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "createdAt" field.
@@ -149,46 +144,6 @@ func UpdatedAtLT(v time.Time) predicate.Box {
 // UpdatedAtLTE applies the LTE predicate on the "updatedAt" field.
 func UpdatedAtLTE(v time.Time) predicate.Box {
 	return predicate.Box(sql.FieldLTE(FieldUpdatedAt, v))
-}
-
-// BoxIdEQ applies the EQ predicate on the "boxId" field.
-func BoxIdEQ(v uuid.UUID) predicate.Box {
-	return predicate.Box(sql.FieldEQ(FieldBoxId, v))
-}
-
-// BoxIdNEQ applies the NEQ predicate on the "boxId" field.
-func BoxIdNEQ(v uuid.UUID) predicate.Box {
-	return predicate.Box(sql.FieldNEQ(FieldBoxId, v))
-}
-
-// BoxIdIn applies the In predicate on the "boxId" field.
-func BoxIdIn(vs ...uuid.UUID) predicate.Box {
-	return predicate.Box(sql.FieldIn(FieldBoxId, vs...))
-}
-
-// BoxIdNotIn applies the NotIn predicate on the "boxId" field.
-func BoxIdNotIn(vs ...uuid.UUID) predicate.Box {
-	return predicate.Box(sql.FieldNotIn(FieldBoxId, vs...))
-}
-
-// BoxIdGT applies the GT predicate on the "boxId" field.
-func BoxIdGT(v uuid.UUID) predicate.Box {
-	return predicate.Box(sql.FieldGT(FieldBoxId, v))
-}
-
-// BoxIdGTE applies the GTE predicate on the "boxId" field.
-func BoxIdGTE(v uuid.UUID) predicate.Box {
-	return predicate.Box(sql.FieldGTE(FieldBoxId, v))
-}
-
-// BoxIdLT applies the LT predicate on the "boxId" field.
-func BoxIdLT(v uuid.UUID) predicate.Box {
-	return predicate.Box(sql.FieldLT(FieldBoxId, v))
-}
-
-// BoxIdLTE applies the LTE predicate on the "boxId" field.
-func BoxIdLTE(v uuid.UUID) predicate.Box {
-	return predicate.Box(sql.FieldLTE(FieldBoxId, v))
 }
 
 // HasParts applies the HasEdge predicate on the "parts" edge.

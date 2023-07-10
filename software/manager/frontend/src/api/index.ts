@@ -1,5 +1,15 @@
 import axios from "axios"
-import { PartModel, UpdatePartData, CreatePartData, StoreByScannerResponse as StoreBoxByScannerResponse, BoxModel } from "../types"
+import {
+  PartModel,
+  UpdatePartData,
+  CreatePartData,
+  StoreByScannerResponse as StoreBoxByScannerResponse,
+  BoxModel,
+  ClearScannerResponse,
+  TagModel,
+  OperatorPositionsResponse,
+  IOState,
+} from "../types"
 
 export function getImageUrl(imageId: string) {
   if (imageId === "00000000-0000-0000-0000-000000000000") {
@@ -24,9 +34,8 @@ export async function searchParts(query: string, filter: string): Promise<PartMo
 }
 
 export async function createPart(data: CreatePartData, image: File | undefined): Promise<PartModel> {
-  console.log("creating part")
   let resp = await axios.post("/api/parts", data)
-  let partId: number = (resp.data)["id"]
+  let partId: number = resp.data["id"]
 
   if (!image) {
     return resp.data
@@ -56,7 +65,6 @@ export async function deletePart(partId: number) {
   return resp
 }
 
-
 // todo: correct type
 export async function deliverPart(partId: number): Promise<object> {
   let resp = await axios.post(`/api/parts/${partId}/deliver`)
@@ -69,12 +77,52 @@ export async function deliverBox(boxId: string): Promise<object> {
   return resp.data
 }
 
-export async function storeBoxByScanner(): Promise<StoreBoxByScannerResponse> {
-  let resp = await axios.post(`/api/store/by-scanner`)
+export async function clearIo(): Promise<StoreBoxByScannerResponse> {
+  let resp = await axios.post(`/api/warehouses/1/clearIo`)
+  return resp.data
+}
+
+export async function clearScanner(): Promise<ClearScannerResponse> {
+  let resp = await axios.post(`/api/warehouses/1/clearScanner`)
+  return resp.data
+}
+
+export async function getBoxFromScanner(): Promise<ClearScannerResponse> {
+  let resp = await axios.get(`/api/boxes/getFromScanner`)
   return resp.data
 }
 
 export async function getEmptyBox(): Promise<BoxModel> {
   const resp = await axios.get("/api/boxes/get-free-box")
+  return resp.data
+}
+
+export async function getAllTags(): Promise<TagModel[]> {
+  let resp = await fetch("/api/tags")
+  return await resp.json()
+}
+
+export async function getPositions(): Promise<OperatorPositionsResponse> {
+  let resp = await fetch("/api/warehouses/1/getPositions")
+  return await resp.json()
+}
+
+export async function getIoState(): Promise<IOState> {
+  let resp = await fetch("/api/warehouses/1/getIOState")
+  return await resp.json()
+}
+
+export async function getFreeIoSlots(): Promise<number[]> {
+  let ioState = await getIoState()
+  return Object.entries(ioState)
+    .filter((v) => v[1] === "free")
+    .map((v) => parseInt(v[0]))
+}
+
+export async function bulkLinkParts(parts: number[], storeAfterwards: boolean): Promise<{ success: boolean }> {
+  let resp = await axios.post("/api/parts/bulkLink", {
+    partIds: parts,
+    storeAfterwards: storeAfterwards,
+  })
   return resp.data
 }

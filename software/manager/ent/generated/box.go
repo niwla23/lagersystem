@@ -18,13 +18,11 @@ import (
 type Box struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
 	// CreatedAt holds the value of the "createdAt" field.
 	CreatedAt time.Time `json:"createdAt"`
 	// UpdatedAt holds the value of the "updatedAt" field.
 	UpdatedAt time.Time `json:"updatedAt"`
-	// BoxId holds the value of the "boxId" field.
-	BoxId uuid.UUID `json:"boxId"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BoxQuery when eager-loading is set.
 	Edges BoxEdges `json:"-"`
@@ -68,11 +66,9 @@ func (*Box) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case box.FieldID:
-			values[i] = new(sql.NullInt64)
 		case box.FieldCreatedAt, box.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case box.FieldBoxId:
+		case box.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Box", columns[i])
@@ -90,11 +86,11 @@ func (b *Box) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case box.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				b.ID = *value
 			}
-			b.ID = int(value.Int64)
 		case box.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
@@ -106,12 +102,6 @@ func (b *Box) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updatedAt", values[i])
 			} else if value.Valid {
 				b.UpdatedAt = value.Time
-			}
-		case box.FieldBoxId:
-			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field boxId", values[i])
-			} else if value != nil {
-				b.BoxId = *value
 			}
 		}
 	}
@@ -156,9 +146,6 @@ func (b *Box) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updatedAt=")
 	builder.WriteString(b.UpdatedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("boxId=")
-	builder.WriteString(fmt.Sprintf("%v", b.BoxId))
 	builder.WriteByte(')')
 	return builder.String()
 }

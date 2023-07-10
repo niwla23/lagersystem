@@ -21,7 +21,7 @@ func FindPosition(boxX *ent.Box) (*ent.Position, error) {
 		positionX, err = database.Client.Position.Query().
 			Where(position.HasWarehouseWith(warehouse.ID(1))).
 			Where(position.Not(position.HasStoredBox())).
-			Only(ctx)
+			First(ctx)
 	} else if err != nil {
 		// shit has gone terribly wrong
 		return nil, err

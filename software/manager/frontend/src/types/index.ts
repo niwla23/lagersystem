@@ -1,8 +1,11 @@
+type UUID = string
+
 export interface TagModel {
   id: number
   createdAt: Date
   updatedAt: Date
   name: string
+  description: string
 }
 
 export interface PropertyModel {
@@ -14,14 +17,22 @@ export interface PropertyModel {
   type: "string" | "number" | "boolean"
 }
 
-export interface BoxModel {
+export interface PositionModel {
   id: number
   createdAt: Date
   updatedAt: Date
-  boxId: string
+}
+
+export interface BoxModel {
+  id: UUID
+  createdAt: Date
+  updatedAt: Date
+  position?: PositionModel
 }
 
 export interface PartModel {
+  createdAt: string
+  updatedAt: string
   id: number
   name: string
   description?: string
@@ -32,11 +43,26 @@ export interface PartModel {
   box?: BoxModel
 }
 
+// todo: outdated
 export interface StoreByScannerResponse {
   status: string
   boxId: string
   positionID: number
   duration: number
+}
+
+export interface ClearScannerResponse {
+  status: "success"
+  boxId: UUID
+  duration: number
+}
+
+export interface OperatorPositionsResponse {
+  positions: { [posId: string]: { x: number; y: number; boxId: UUID } }
+}
+
+export interface IOState {
+  [posId: string]: "occupied" | "free"
 }
 
 export interface PropertyAddData {

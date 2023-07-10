@@ -15,6 +15,7 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/generated/property"
 	"github.com/niwla23/lagersystem/manager/ent/generated/tag"
 	"github.com/niwla23/lagersystem/manager/helpers"
+	"github.com/niwla23/lagersystem/manager/images"
 	"github.com/niwla23/lagersystem/manager/typesense_wrapper"
 	"github.com/typesense/typesense-go/typesense/api"
 )
@@ -31,6 +32,11 @@ type PartAddData struct {
 	Tags        []string                   `json:"tags"`
 	Properties  map[string]PropertyAddData `json:"properties"`
 	BoxId       uuid.UUID                  `json:"boxId"`
+}
+
+type BulkLinkData struct {
+	PartIds         []int `json:"partIds"`
+	StoreAfterwards bool  `json:"storeAfterwards"`
 }
 
 func createOrGetTagsFromNameList(tagNames *[]string, client *ent.Client, ctx context.Context) ([]*ent.Tag, error) {
@@ -123,7 +129,7 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			AddTags(tags...)
 
 		if data.BoxId != uuid.Nil {
-			boxX, err := client.Box.Query().Where(box.BoxId(data.BoxId)).Only(ctx)
+			boxX, err := client.Box.Query().Where(box.ID(data.BoxId)).Only(ctx)
 			if err != nil {
 				return err
 			}
@@ -187,11 +193,13 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			AddTags(tags...)
 
 		if data.BoxId != uuid.Nil {
-			boxX, err := client.Box.Query().Where(box.BoxId(data.BoxId)).Only(ctx)
+			boxX, err := client.Box.Query().Where(box.ID(data.BoxId)).Only(ctx)
 			if err != nil {
 				return err
 			}
 			builder.SetBox(boxX)
+		} else {
+			builder.ClearBox()
 		}
 
 		partX, err = builder.Save(ctx)
@@ -226,7 +234,8 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 
 		imageId := uuid.New()
 		fp := filepath.Join(config.StoragePath, imageId.String())
-		err = c.SaveFile(files[0], fp)
+
+		_, err = images.SaveImage(files[0], fp)
 		if err != nil {
 			return err
 		}
@@ -272,6 +281,22 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		query := c.Query("q")
 		filter := c.Query("filter")
 
+		if query == "" {
+			parts, err := client.Part.Query().
+				WithTags().
+				WithProperties().
+				WithBox(func(q *ent.BoxQuery) {
+					q.WithPosition()
+				}).
+				Order(ent.Desc(part.FieldUpdatedAt)).
+				All(ctx)
+			if err != nil {
+				return err
+			}
+
+			return c.JSON(parts)
+		}
+
 		filterBy := filter
 		searchResult, err := typesense_wrapper.TypesenseClient.Collection("parts").Documents().Search(&api.SearchCollectionParams{FilterBy: &filterBy, Q: query, QueryBy: "name,tags,description"})
 		if err != nil {
@@ -286,7 +311,13 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 				return err
 			}
 
-			part, err := client.Part.Query().Where(part.ID(partId)).WithTags().WithProperties().Only(ctx)
+			part, err := client.Part.Query().Where(part.ID(partId)).
+				WithTags().
+				WithProperties().
+				WithBox(func(q *ent.BoxQuery) {
+					q.WithPosition()
+				}).
+				Only(ctx)
 			if err != nil {
 				return err
 			}
@@ -328,15 +359,59 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			return err
 		}
 
-		position, err := part.QueryBox().QueryPosition().Only(ctx)
+		box, err := part.QueryBox().Only(ctx)
 		if err != nil {
 			return err
 		}
 
-		resp, err := helpers.DeliverBoxByPositionId(position.ID)
+		position, err := box.QueryPosition().Only(ctx)
 		if err != nil {
 			return err
 		}
+
+		// freeIoPos, err := helpers.FindIoSlot()
+		// if err != nil {
+		// 	return err
+		// }
+
+		resp, err := helpers.PickupBox(position.ID)
+		if err != nil {
+			return err
+		}
+		box.Update().ClearPosition().Exec(ctx)
+
 		return c.JSON(resp)
+	})
+
+	router.Post("/bulkLink", func(c *fiber.Ctx) error {
+		data := new(BulkLinkData)
+		if err := c.BodyParser(data); err != nil {
+			return err
+		}
+
+		// scan box and find it in db
+		boxX, _, err := helpers.ScanIoPos("1")
+		if err != nil {
+			return err
+		}
+
+		for _, partId := range data.PartIds {
+			// get part
+			part, err := client.Part.Get(ctx, partId)
+			if err != nil {
+				return err
+			}
+
+			// link part to box
+			part.Update().SetBox(boxX).Exec(ctx)
+		}
+
+		if data.StoreAfterwards {
+			ClearIoPos("1", client, ctx)
+		}
+
+		return c.JSON(fiber.Map{
+			"success": true,
+		})
 	})
 }
