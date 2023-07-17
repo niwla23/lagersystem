@@ -16,7 +16,7 @@ type WarehouseAddData struct {
 	Description string `json:"description"`
 }
 
-func ClearIoPos(ioPosId string, client *ent_gen.Client, ctx context.Context) (*ent_gen.Box, error) {
+func ClearIoPos(ioPosId string, client *ent_gen.Client, ctx context.Context, boxX *ent_gen.Box) (*ent_gen.Box, error) {
 	ioState, err := helpers.GetIOState()
 	if err != nil {
 		return nil, err
@@ -33,9 +33,12 @@ func ClearIoPos(ioPosId string, client *ent_gen.Client, ctx context.Context) (*e
 	}
 
 	// scan box and find it in db
-	boxX, _, err := helpers.ScanIoPos(ioPosId)
-	if err != nil {
-		return boxX, err
+
+	if boxX == nil {
+		boxX, _, err = helpers.ScanIoPos(ioPosId)
+		if err != nil {
+			return boxX, err
+		}
 	}
 
 	// find a position for the box
@@ -93,7 +96,7 @@ func RegisterWarehouseRoutes(router fiber.Router, client *ent_gen.Client, ctx co
 		clearedIds := make([]string, 0)
 		for i := 1; i <= 3; i++ {
 			if !helpers.IsIoSlotFree(ioState, fmt.Sprint(i)) {
-				_, err := ClearIoPos(fmt.Sprint(i), client, ctx)
+				_, err := ClearIoPos(fmt.Sprint(i), client, ctx, nil)
 				if err != nil {
 					return err
 				}
@@ -120,7 +123,7 @@ func RegisterWarehouseRoutes(router fiber.Router, client *ent_gen.Client, ctx co
 			return errors.New("source is free")
 		}
 
-		boxX, err := ClearIoPos("1", client, ctx)
+		boxX, err := ClearIoPos("1", client, ctx, nil)
 		if err != nil {
 			return err
 		}

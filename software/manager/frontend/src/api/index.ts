@@ -29,7 +29,9 @@ export async function getPartById(partId: number): Promise<PartModel> {
 }
 
 export async function searchParts(query: string, filter: string): Promise<PartModel[]> {
-  let resp = await fetch(`/api/parts/search?q=${query}`)
+  let params = new URLSearchParams({ q: query, filter })
+
+  let resp = await fetch(`/api/parts/search?${params.toString()}`)
   return await resp.json()
 }
 

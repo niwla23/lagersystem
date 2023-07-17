@@ -29,11 +29,11 @@ export default function PartAddDataForm(props: Props) {
   } = useForm<AddPartDataForm>()
 
   const onSubmit: SubmitHandler<AddPartDataForm> = (data) => {
-
-    let tags = data.tags.split(",").map((tag) => tag.trim())
-    // remove empty tags
-    tags = tags.filter((t) => t !== "")
-
+    let tags: string[] = []
+    if (data.tags) {
+      let tags = data.tags.split(",").map((tag) => tag.trim())
+      tags = tags.filter((t) => t !== "") // no empty tags
+    }
     let creationData: CreatePartData = {
       name: data.partName,
       description: data.description,
@@ -75,18 +75,18 @@ export default function PartAddDataForm(props: Props) {
         </label>
         {/* <TagSelector /> */}
         <Controller
-            control={control}
-            rules={{ required: true, minLength: 1 }}
-            name="tags"
-            render={({ field }) => (
-              <TagSelector
-                isMulti
-                label="Tags"
-                {...field}
-                error={errors.tags?.type?.toString()}
-              />
-            )}
-          />
+          control={control}
+          rules={{ required: false, minLength: 1 }}
+          name="tags"
+          render={({ field }) => (
+            <TagSelector
+              isMulti
+              label="Tags"
+              {...field}
+              error={errors.tags?.type?.toString()}
+            />
+          )}
+        />
         {/* <input
           type="text"
           placeholder="Seperated by comma (e.g.: resistor,electronics)"

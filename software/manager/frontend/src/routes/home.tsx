@@ -4,7 +4,7 @@ import PartCard from "../components/partCard"
 import * as api from "../api"
 import { PartModel } from "../types"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faArrowLeft, faCancel, faPen, faPlug, faTruckRampBox, faXmark } from "@fortawesome/free-solid-svg-icons"
+import { faArrowLeft, faCancel, faDeleteLeft, faPen, faPlug, faTruckRampBox, faXmark } from "@fortawesome/free-solid-svg-icons"
 import { useNavigate } from "react-router-dom"
 import Swal from "sweetalert2"
 import { isAxiosError } from "axios"
@@ -13,10 +13,11 @@ export default function Home() {
   const navigate = useNavigate()
   let [parts, setParts] = React.useState<PartModel[]>([])
   let [searchQuery, setSearchQuery] = React.useState("")
+  let [filter, setFilter] = React.useState("")
   let [selectedParts, setSelectedParts] = React.useState<number[]>([])
 
   const loadAllParts = async () => {
-    let x = await api.searchParts(searchQuery, "")
+    let x = await api.searchParts(searchQuery, filter)
     setParts(x)
   }
 
@@ -59,9 +60,9 @@ export default function Home() {
 
   const connectSelectedPartsToBox = async () => {
     let result = await Swal.fire({
-      title: 'Store box after connect?',
+      title: "Store box after connect?",
       showDenyButton: true,
-      confirmButtonText: 'Yes',
+      confirmButtonText: "Yes",
       denyButtonText: `No`,
     })
     let storeAfterwards = result.isConfirmed
@@ -96,10 +97,10 @@ export default function Home() {
 
   useEffect(() => {
     loadAllParts()
-  }, [searchQuery])
+  }, [searchQuery, filter])
 
-  useEffect(()=>{
-    let x = setInterval(()=>{
+  useEffect(() => {
+    let x = setInterval(() => {
       loadAllParts()
     }, 1000)
 
@@ -107,6 +108,10 @@ export default function Home() {
       clearInterval(x)
     }
   })
+
+  if (!Array.isArray(parts)) {
+    parts = []
+  }
 
   let renderedParts = parts.map((part) => {
     let tags = part.tags ? part.tags.map((tag) => tag.name) : []
@@ -140,6 +145,7 @@ export default function Home() {
         positionId={part.box?.position?.id}
         checked={selectedParts.includes(part.id)}
         onCheckChanged={(selected) => handleSelectChanged(part.id, selected)}
+        onTagClick={(tag) => setFilter(`tags: ${tag}`)}
         imageUrl={api.getImageUrl(part.imageId)}
         modifiedAt={new Date(part.updatedAt)}
       />
@@ -148,7 +154,7 @@ export default function Home() {
 
   return (
     <div className="h-full p-4">
-      <div className="input-group w-full pb-4">
+      <div className="input-group w-full">
         <input
           type="text"
           placeholder="Search…"
@@ -156,11 +162,26 @@ export default function Home() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <button className="btn btn-primary btn-square">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </button>
+      </div>
+      <div className="input-group w-full pb-4">
+        <input
+          type="text"
+          placeholder="Filter"
+          className="input input-bordered w-full"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        />
+
+        <div className="dropdown dropdown-left">
+          <label tabIndex={0} className="btn">Preset</label>
+          <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+            <li><a onClick={() => setFilter("hasBox: false")}>Ghost parts</a></li>
+            <li><a onClick={() => setFilter("isStored: false && hasBox: true")}>Unstored non-ghost parts</a></li>
+            <li><a onClick={() => setFilter("isStored: false")}>Unstored parts</a></li>
+            <li><a onClick={() => setFilter("isStored: true")}>Stored parts</a></li>
+            <li><a onClick={() => setFilter("")}>No Filter</a></li>
+          </ul>
+        </div>
       </div>
       <main className="grid gap-2">{renderedParts}</main>
       <div

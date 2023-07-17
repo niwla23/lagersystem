@@ -8,28 +8,19 @@ import { useNavigate } from "react-router-dom"
 
 export default function AddPart() {
   const navigate = useNavigate()
-  type AddStage = "selectMode" | "dataForm" | "getting" | "storing" | "confirmPutPartIn"
+  type AddStage = "selectMode" | "dataForm" | "storing" | "confirmPutPartIn"
 
   const [stage, setStage] = useState<AddStage>("selectMode")
-  const [partAddMode, setPartAddMode] = useState<AddMode>("emptyBox")
+  const [partAddMode, setPartAddMode] = useState<AddMode>("createOnly")
   const [partCreateData, setPartCreateData] = useState<CreatePartData | null>(null)
   const [partId, setPartId] = useState<number | null>(null)
-
-  const deliverBoxForPutIn = async (boxId: string) => {
-    setStage("getting")
-    await api.deliverBox(boxId)
-    setStage("confirmPutPartIn")
-  }
-
+  
   const storeBox = async () => {
     setStage("storing")
-    const resp = await api.clearScanner()
     if (!partId) {
-      alert("partId not set")
       return
     }
-    await api.updatePart(partId, { ...(partCreateData as UpdatePartData), boxId: resp.boxId }, undefined)
-    alert("successfully stored box")
+    api.bulkLinkParts([partId], true)  
     navigate("/")
   }
 
@@ -45,18 +36,6 @@ export default function AddPart() {
     }
 
     switch (partAddMode) {
-      case "emptyBox":
-        // user wants to store part in an empty box, find one and deliver it
-        try {
-          const emptyBox = await api.getEmptyBox()
-          deliverBoxForPutIn(emptyBox.id)
-        } catch (e) {
-          alert("no free box found")
-          navigate("/")
-          return
-        }
-        break
-
       case "createOnly":
         // we are done here
         navigate("/")
@@ -74,15 +53,6 @@ export default function AddPart() {
     content = <ChoosePartAddMode modeChosen={partAddMode} setModeChosen={setPartAddMode} submit={() => setStage("dataForm")} />
   } else if (stage === "dataForm") {
     content = <PartAddDataForm submit={submitForm} />
-  } else if (stage === "getting") {
-    content = (
-      <div className="h-full grid place-items-center">
-        <div className="w-full">
-          <h2 className="font-bold text-xl">Getting box...</h2>
-          <progress className="progress w-full"></progress>
-        </div>
-      </div>
-    )
   } else if (stage === "storing") {
     content = (
       <div className="h-full grid place-items-center">

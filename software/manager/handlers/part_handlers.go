@@ -16,6 +16,7 @@ import (
 	"github.com/niwla23/lagersystem/manager/ent/generated/tag"
 	"github.com/niwla23/lagersystem/manager/helpers"
 	"github.com/niwla23/lagersystem/manager/images"
+	"github.com/niwla23/lagersystem/manager/typesense_sync"
 	"github.com/niwla23/lagersystem/manager/typesense_wrapper"
 	"github.com/typesense/typesense-go/typesense/api"
 )
@@ -96,6 +97,16 @@ func createOrUpdatePropertiesFromMap(part *ent.Part, properties *map[string]Prop
 	return nil
 }
 
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
+}
+
 func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Context) {
 	router.Post("/", func(c *fiber.Ctx) error {
 		data := new(PartAddData)
@@ -136,8 +147,13 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			builder.SetBox(boxX)
 		}
 
-		partX, err := builder.Save(ctx)
+		newPart, err := builder.Save(ctx)
+		if err != nil {
+			return err
+		}
 
+		partId := newPart.ID
+		partX, err := client.Part.Query().Where(part.ID(partId)).WithBox(func(q *ent.BoxQuery) { q.WithPosition() }).WithTags().First(ctx)
 		if err != nil {
 			return err
 		}
@@ -147,6 +163,8 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		if err != nil {
 			return err
 		}
+
+		typesense_sync.SyncPartsToTypesense([]*ent.Part{partX})
 
 		return c.JSON(partX)
 	})
@@ -202,11 +220,19 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			builder.ClearBox()
 		}
 
-		partX, err = builder.Save(ctx)
+		_, err = builder.Save(ctx)
 
 		if err != nil {
 			return err
 		}
+
+		partX, err = client.Part.Query().Where(part.ID(partId)).WithBox(func(q *ent.BoxQuery) { q.WithPosition() }).WithTags().First(ctx)
+
+		if err != nil {
+			return err
+		}
+
+		typesense_sync.SyncPartsToTypesense([]*ent.Part{partX})
 
 		return c.JSON(partX)
 	})
@@ -281,24 +307,10 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		query := c.Query("q")
 		filter := c.Query("filter")
 
-		if query == "" {
-			parts, err := client.Part.Query().
-				WithTags().
-				WithProperties().
-				WithBox(func(q *ent.BoxQuery) {
-					q.WithPosition()
-				}).
-				Order(ent.Desc(part.FieldUpdatedAt)).
-				All(ctx)
-			if err != nil {
-				return err
-			}
-
-			return c.JSON(parts)
-		}
-
-		filterBy := filter
-		searchResult, err := typesense_wrapper.TypesenseClient.Collection("parts").Documents().Search(&api.SearchCollectionParams{FilterBy: &filterBy, Q: query, QueryBy: "name,tags,description"})
+		maxCandidates := 20000
+		searchResult, err := typesense_wrapper.TypesenseClient.Collection("parts").Documents().Search(
+			&api.SearchCollectionParams{FilterBy: &filter, Q: query, QueryBy: "name,tags,description", MaxCandidates: &maxCandidates},
+		)
 		if err != nil {
 			return err
 		}
@@ -407,7 +419,7 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		}
 
 		if data.StoreAfterwards {
-			ClearIoPos("1", client, ctx)
+			ClearIoPos("1", client, ctx, boxX)
 		}
 
 		return c.JSON(fiber.Map{

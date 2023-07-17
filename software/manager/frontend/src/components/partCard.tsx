@@ -15,13 +15,13 @@ type Props = {
   checked: boolean
   modifiedAt: Date
   onCheckChanged: (checked: boolean) => void
+  onTagClick: (tagName: string) => void
 }
 
 export default function PartCard(props: Props) {
-  console.log(props.id, props.checked)
   let renderedTags = props.tags.map((tag) => {
     return (
-      <span className="badge badge-secondary" key={tag}>
+      <span className="badge badge-secondary" key={tag} onClick={() => props.onTagClick(tag)}>
         {tag}
       </span>
     )

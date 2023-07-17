@@ -24,7 +24,7 @@ func check(err error) {
 	}
 }
 
-func syncPartsToTypesense(parts []*ent.Part) {
+func SyncPartsToTypesense(parts []*ent.Part) {
 	// using interface type here might look like a dumb idea because we know the type
 	// and it is but go is too incompetent to convert a specific type array to an interface array
 	// so yeah that is how it is.
@@ -48,6 +48,8 @@ func syncPartsToTypesense(parts []*ent.Part) {
 			Name:        part.Name,
 			Description: part.Description,
 			Tags:        tags,
+			HasBox:      part.Edges.Box != nil,
+			IsStored:    part.Edges.Box != nil && part.Edges.Box.Edges.Position != nil,
 		}
 		documentsToIndex = append(documentsToIndex, partDocument)
 	}
@@ -71,9 +73,9 @@ func SyncBackgroundTask() {
 		ctx := context.Background()
 
 		// get all parts that have been modified since the last sync
-		modifiedParts, err := client.Part.Query().Where(part.UpdatedAtGT(time.Now().Add(SYNC_INTERVAL * -1))).WithTags().All(ctx)
+		modifiedParts, err := client.Part.Query().Where(part.UpdatedAtGT(time.Now().Add(SYNC_INTERVAL * -1))).WithTags().WithBox(func(q *ent.BoxQuery) { q.WithPosition() }).All(ctx)
 		check(err)
-		syncPartsToTypesense(modifiedParts)
+		SyncPartsToTypesense(modifiedParts)
 
 		// integrity check: check if part counts are equal
 		partCount, err := client.Part.Query().Where(part.Deleted(false)).Count(ctx)
@@ -85,12 +87,12 @@ func SyncBackgroundTask() {
 		if partCount != partCountTypesense {
 			fmt.Println("Integrity check failed, deleting collection and syncing all parts...")
 			fmt.Println("Part count DB:", partCount, "Part count Typesense:", partCountTypesense)
-			parts, err := client.Part.Query().Where(part.Deleted(false)).WithTags().All(ctx)
+			parts, err := client.Part.Query().Where(part.Deleted(false)).WithTags().WithBox(func(q *ent.BoxQuery) { q.WithPosition() }).All(ctx)
 			check(err)
 			_, err = typesense_wrapper.TypesenseClient.Collection("parts").Delete()
 			check(err)
 			typesense_wrapper.InitTypesense()
-			syncPartsToTypesense(parts)
+			SyncPartsToTypesense(parts)
 		}
 
 		time.Sleep(SYNC_INTERVAL)
