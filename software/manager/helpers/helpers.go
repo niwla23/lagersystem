@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
+	"github.com/niwla23/lagersystem/manager/config"
 	"github.com/niwla23/lagersystem/manager/database"
 	ent "github.com/niwla23/lagersystem/manager/ent/generated"
 	"github.com/niwla23/lagersystem/manager/ent/generated/box"
@@ -22,13 +23,11 @@ type scanBoxIdResponse struct {
 	Duration float64   `json:"duration"`
 }
 
-var OPERATOR_BASE_URL = "http://lagersystem:5000"
-
 // returns boxX, boxId, error
 func ScanIoPos(ioPos string) (*ent.Box, *uuid.UUID, error) {
 	ctx := context.Background()
 	// get boxId from operator service
-	resp, err := http.Get(OPERATOR_BASE_URL + "/scanBoxId/" + ioPos)
+	resp, err := http.Get(config.OperatorBaseUrl + "/scanBoxId/" + ioPos)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -71,7 +70,7 @@ type DeliverBoxResponse struct {
 }
 
 func PickupBox(positionId int) (*DeliverBoxResponse, error) {
-	resp, err := http.Get(fmt.Sprintf(OPERATOR_BASE_URL+"/pickupBox/%v/%v", positionId, "0"))
+	resp, err := http.Get(fmt.Sprintf(config.OperatorBaseUrl+"/pickupBox/%v/%v", positionId, "0"))
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +87,7 @@ func PickupBox(positionId int) (*DeliverBoxResponse, error) {
 }
 
 func StoreBox(positionId int, ioPosId string) (*DeliverBoxResponse, error) {
-	resp, err := http.Get(fmt.Sprintf(OPERATOR_BASE_URL+"/storeBox/%v/%v", positionId, ioPosId))
+	resp, err := http.Get(fmt.Sprintf(config.OperatorBaseUrl+"/storeBox/%v/%v", positionId, ioPosId))
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +106,7 @@ type IOStateResponse struct {
 }
 
 func GetIOState() (*IOState, error) {
-	resp, err := http.Get(OPERATOR_BASE_URL + "/getIOState")
+	resp, err := http.Get(config.OperatorBaseUrl + "/getIOState")
 	if err != nil {
 		return nil, err
 	}
@@ -143,16 +142,17 @@ func FindIoSlot() (string, error) {
 
 type GetPositionsResponse struct {
 	Positions map[string]struct {
-		X     float64 `json:"x"`
-		Y     float64 `json:"y"`
-		BoxId string  `json:"boxId"`
+		X   float64  `json:"x"`
+		Y   float64  `json:"y"`
+		Box *ent.Box `json:"box"`
 	} `json:"positions"`
 }
 
 func GetPositions(client *ent.Client) (*GetPositionsResponse, error) {
 	ctx := context.Background()
 
-	resp, err := http.Get(OPERATOR_BASE_URL + "/getPositions")
+	fmt.Println(config.OperatorBaseUrl + "/getPosition")
+	resp, err := http.Get(config.OperatorBaseUrl + "/getPositions")
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func GetPositions(client *ent.Client) (*GetPositionsResponse, error) {
 			continue
 		}
 
-		positionDb, err := client.Position.Query().Where(position.ID(posIdInt)).WithStoredBox().Only(ctx)
+		positionDb, err := client.Position.Query().Where(position.ID(posIdInt)).WithStoredBox(func(q *ent.BoxQuery) { q.WithParts() }).Only(ctx)
 		if err != nil {
 			continue
 		}
@@ -177,7 +177,7 @@ func GetPositions(client *ent.Client) (*GetPositionsResponse, error) {
 		if positionDb.Edges.StoredBox != nil {
 
 			if entry, ok := data.Positions[posId]; ok {
-				entry.BoxId = positionDb.Edges.StoredBox.ID.String()
+				entry.Box = positionDb.Edges.StoredBox
 				data.Positions[posId] = entry
 			}
 		}

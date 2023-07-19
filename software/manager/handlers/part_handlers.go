@@ -307,9 +307,8 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 		query := c.Query("q")
 		filter := c.Query("filter")
 
-		maxCandidates := 20000
 		searchResult, err := typesense_wrapper.TypesenseClient.Collection("parts").Documents().Search(
-			&api.SearchCollectionParams{FilterBy: &filter, Q: query, QueryBy: "name,tags,description", MaxCandidates: &maxCandidates},
+			&api.SearchCollectionParams{FilterBy: &filter, Q: query, QueryBy: "name,tags,description"},
 		)
 		if err != nil {
 			return err

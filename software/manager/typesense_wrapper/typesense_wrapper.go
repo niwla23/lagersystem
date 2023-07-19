@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/niwla23/lagersystem/manager/config"
 	"github.com/typesense/typesense-go/typesense"
 	"github.com/typesense/typesense-go/typesense/api"
 )
@@ -22,7 +23,7 @@ type PartDocument struct {
 func InitTypesense() {
 	// create typesense client
 	TypesenseClient = typesense.NewClient(
-		typesense.WithServer("http://localhost:8108"),
+		typesense.WithServer(config.TypesenseUri),
 		typesense.WithAPIKey("xyz"))
 
 	// create typesense collection if it doesn't exist

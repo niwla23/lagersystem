@@ -1,0 +1,28 @@
+version: '3.4'
+services:
+  typesense:
+    image: typesense/typesense:0.24.0
+    restart: "always"
+    volumes:
+      - ./docker_data/typesense:/data
+    command: '--data-dir /data --api-key=xyz --enable-cors'
+
+  app:
+    build: .
+    depends_on:
+      - typesense
+    restart: always
+    ports:
+      - "6969:3001"
+    volumes:
+      - "./docker_data/app:/data"
+    environment:
+      STORAGE_PATH: "/data/images"
+      DB_URI: "file:///data/db.sqlite?_fk=1"
+      TYPESENSE_URI: "http://typesense:8108"
+      OPERATOR_BASE_URL: "http://192.168.178.64:5000"
+
+volumes:
+  typesense-data:
+
+

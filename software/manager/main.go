@@ -2,27 +2,32 @@ package main
 
 import (
 	"context"
+	"embed"
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/etag"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	_ "github.com/mattn/go-sqlite3"
-
 	"github.com/niwla23/lagersystem/manager/config"
 	"github.com/niwla23/lagersystem/manager/database"
-	_ "github.com/niwla23/lagersystem/manager/ent/generated/runtime"
-	"github.com/niwla23/lagersystem/manager/typesense_sync"
-	"github.com/niwla23/lagersystem/manager/typesense_wrapper"
-
 	ent "github.com/niwla23/lagersystem/manager/ent/generated"
 
+	_ "github.com/niwla23/lagersystem/manager/ent/generated/runtime"
 	"github.com/niwla23/lagersystem/manager/handlers"
+	"github.com/niwla23/lagersystem/manager/typesense_sync"
+	"github.com/niwla23/lagersystem/manager/typesense_wrapper"
 )
+
+//go:embed fake_frontend/*
+var frontendFs embed.FS
 
 func main() {
 	config.LoadConfigFromEnvironment()
@@ -90,21 +95,46 @@ func main() {
 	app.Use(recover.New(recover.Config{EnableStackTrace: true}))
 	app.Use(etag.New())
 
-	app.Static("/static", config.StoragePath)
+	app.Use("/", filesystem.New(filesystem.Config{
+		Root:       http.FS(frontendFs),
+		Browse:     false,
+		PathPrefix: "fake_frontend",
+	}))
 
-	partHandlers := app.Group("/parts")
+	app.Use(func(c *fiber.Ctx) error {
+		// Check if the route is a backend route (starting with /api)
+		c.Status(200)
+		if strings.HasPrefix(c.Path(), "/api") {
+			return c.Next()
+		}
+
+		content, err := frontendFs.Open("fake_frontend/index.html")
+		if err != nil {
+			return c.Status(fiber.StatusNotFound).SendString("Frontend not found")
+		}
+
+		c.Type("text/html")
+		c.Set("content-type", "text/html; charset=utf-8")
+		c.Set("Content-Disposition", "inline")
+		c.Status(200)
+		return c.SendStream(content)
+	})
+
+	app.Static("/api/static", config.StoragePath)
+
+	partHandlers := app.Group("/api/parts")
 	handlers.RegisterPartRoutes(partHandlers, database.Client, ctx)
 
-	positionHandlers := app.Group("/positions")
+	positionHandlers := app.Group("/api/positions")
 	handlers.RegisterPositionRoutes(positionHandlers, database.Client, ctx)
 
-	boxHandlers := app.Group("/boxes")
+	boxHandlers := app.Group("/api/boxes")
 	handlers.RegisterBoxRoutes(boxHandlers, database.Client, ctx)
 
-	tagHandlers := app.Group("/tags")
+	tagHandlers := app.Group("/api/tags")
 	handlers.RegisterTagRoutes(tagHandlers, database.Client, ctx)
 
-	warehouseHandlers := app.Group("/warehouses")
+	warehouseHandlers := app.Group("/api/warehouses")
 	handlers.RegisterWarehouseRoutes(warehouseHandlers, database.Client, ctx)
 
 	app.Listen(":3001")

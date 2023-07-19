@@ -27,6 +27,7 @@ export interface BoxModel {
   id: UUID
   createdAt: Date
   updatedAt: Date
+  parts?: PartModel
   position?: PositionModel
 }
 
@@ -58,7 +59,7 @@ export interface ClearScannerResponse {
 }
 
 export interface OperatorPositionsResponse {
-  positions: { [posId: string]: { x: number; y: number; boxId: UUID } }
+  positions: { [posId: string]: { x: number; y: number; box?: BoxModel } }
 }
 
 export interface IOState {

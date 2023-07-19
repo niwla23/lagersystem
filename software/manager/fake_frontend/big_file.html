@@ -1,0 +1,1304 @@
+package handlers
+
+import (
+	"fmt"
+	"path/filepath"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+	"github.com/niwla23/noteqr/backend/auth"
+	ent_gen "github.com/niwla23/noteqr/backend/ent/generated"
+	"github.com/niwla23/noteqr/backend/ent/generated/document"
+	"github.com/niwla23/noteqr/backend/ent/generated/documentfile"
+	"github.com/niwla23/noteqr/backend/ent/generated/user"
+	"github.com/niwla23/noteqr/backend/monitoring"
+	"github.com/niwla23/noteqr/backend/types"
+)
+
+type DocumentUpdateData struct {
+	Content       string `json:"content"`
+	IsPublic      bool   `json:"isPublic"`
+	IsPublicWrite bool   `json:"isPublicWrite"`
+	RedirectUrl   string `json:"redirectUrl"`
+}
+
+func RegisterDocumentRoutes(router fiber.Router, client *ent_gen.Client, config types.AppConfig) {
+	// create document (will be completly empty, not accessible by user)
+	router.Post("/", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+
+		if err != nil {
+			return err
+		}
+
+		if !userX.IsAdmin {
+			return fiber.NewError(fiber.StatusForbidden, "only admins can create documents")
+		}
+
+		doc, err := client.Document.Create().
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(doc)
+	})
+
+	// update document
+	// if document is not activated, it will be activated for the current user
+	router.Put("/:documentID", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUser(c)
+
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		// parse request body
+		data := new(DocumentUpdateData)
+		if err := c.BodyParser(data); err != nil {
+			return err
+		}
+
+		// get document from db
+		doc, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			WithOwner().
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		isOwner := false
+		canEdit := doc.IsPublicWrite
+		if userX != nil {
+			canEdit = doc.Edges.Owner.ID == userX.ID || doc.IsPublicWrite
+			isOwner = doc.Edges.Owner.ID == userX.ID
+		}
+
+		if doc.Edges.Owner != nil && !canEdit {
+			return fiber.NewError(fiber.StatusForbidden, "you do not own this document")
+		}
+
+		if !isOwner {
+			// check that no settings are modified
+			if data.IsPublic != doc.IsPublic {
+				return fiber.NewError(fiber.StatusForbidden, "you can not change these settings")
+			}
+			if data.IsPublicWrite != doc.IsPublicWrite {
+				return fiber.NewError(fiber.StatusForbidden, "you can not change these settings")
+			}
+		}
+
+		updateBuilder := doc.Update()
+
+		// if document is not activated, activate it for the current user
+		if doc.Edges.Owner == nil {
+
+			if userX == nil {
+				return fiber.NewError(fiber.StatusUnauthorized, "you need to login to activate this document")
+			}
+
+			updateBuilder = updateBuilder.SetOwner(userX)
+			updateBuilder = updateBuilder.SetActivatedAt(time.Now())
+		}
+
+		// update document with request data
+		doc, err = updateBuilder.
+			SetContent(data.Content).
+			SetRedirectUrl(data.RedirectUrl).
+			SetIsPublic(data.IsPublic).
+			SetIsPublicWrite(data.IsPublicWrite).
+			SetUpdatedAt(time.Now()).
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		monitoring.CodesUpdateCount.Inc()
+		return c.JSON(doc)
+	})
+
+	// add file to document
+	router.Post("/:documentId/files", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+		if err != nil {
+			return err
+		}
+
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		form, err := c.MultipartForm()
+		if err != nil {
+			return fiber.NewError(400, "please send a multipart form")
+		}
+
+		files := form.File["file"]
+
+		// get document from db
+		documentX, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			Where(document.HasOwnerWith(user.ID(userX.ID))).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		if len(files) != 1 {
+			return fiber.NewError(400, "please send exactly one file")
+		}
+		file := files[0]
+
+		fileId := uuid.New()
+		fp := filepath.Join(config.StoragePath, fileId.String())
+		err = c.SaveFile(file, fp)
+		if err != nil {
+			return err
+		}
+
+		fileResp, err := client.DocumentFile.
+			Create().
+			SetID(fileId).
+			SetDocument(documentX).
+			SetFilename(file.Filename).
+			SetSizeBytes(file.Size).
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(fileResp)
+	})
+
+	// download file
+	router.Get("/:documentId/files/:fileId", func(c *fiber.Ctx) error {
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		fileID, err := uuid.Parse(c.Params("fileID"))
+		if err != nil {
+			return err
+		}
+
+		fileX, err := client.DocumentFile.Query().
+			Where(documentfile.ID(fileID)).
+			Where(documentfile.HasDocumentWith(document.ID(documentID))).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		c.Set("content-disposition", fmt.Sprintf("filename=\"%s\"", fileX.Filename))
+		return c.SendFile(filepath.Join(config.StoragePath, fileX.ID.String()), true)
+	})
+
+	// deactivate document
+	router.Delete("/:documentID", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+		if err != nil {
+			return err
+		}
+
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		// get document from db
+		doc, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			Where(document.HasOwnerWith(user.ID(userX.ID))).
+			WithOwner().
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		updateBuilder := doc.Update()
+
+		// update document with request data
+		doc, err = updateBuilder.
+			SetActivatedAt(time.Time{}).
+			ClearOwner().
+			SetContent("").
+			SetRedirectUrl("").
+			SetIsPublic(true).
+			SetUpdatedAt(time.Now()).
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(doc)
+	})
+
+	// get all documents for user
+	router.Get("/", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+		if err != nil {
+			return err
+		}
+
+		allDocs, err := client.Document.Query().
+			WithOwner().
+			Where(document.HasOwnerWith(user.ID(userX.ID))).
+			Order(ent_gen.Desc(document.FieldUpdatedAt)).
+			All(c.Context())
+		if err != nil {
+			return err
+		}
+
+		// truncate content to first characters
+		for _, doc := range allDocs {
+			if len(doc.Content) > 500 {
+				doc.Content = doc.Content[:500]
+			}
+		}
+
+		return c.JSON(allDocs)
+	})
+
+	// get document by id
+	router.Get("/:documentID", func(c *fiber.Ctx) error {
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		userX, userErr := auth.GetUser(c)
+		isAuthenticated := userErr == nil
+
+		// get document from db
+		doc, err := client.Document.Query().
+			WithOwner().
+			Where(document.ID(documentID)).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		if doc.ActivatedAt.IsZero() && doc.Edges.Owner == nil {
+			// document is not yet activated and not owned by user
+			return fiber.NewError(fiber.StatusNotAcceptable, "document not activated")
+		}
+
+		if isAuthenticated && doc.Edges.Owner.ID != userX.ID && !doc.IsPublic {
+			// document is not owned by user
+			return fiber.NewError(fiber.StatusForbidden, "you do not own this document")
+		}
+
+		if !isAuthenticated && !doc.IsPublic {
+			// unauthenticated user tries to access non-public document
+			return fiber.NewError(fiber.StatusForbidden, "you need to login")
+		}
+
+		// get document from db without sensitive data
+		doc2, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		isOwner := false
+		if userErr == nil && doc.Edges.Owner.ID == userX.ID {
+			isOwner = true
+		}
+
+		return c.JSON(&fiber.Map{"isOwner": isOwner, "document": doc2})
+	})
+}
+package handlers
+
+import (
+	"fmt"
+	"path/filepath"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+	"github.com/niwla23/noteqr/backend/auth"
+	ent_gen "github.com/niwla23/noteqr/backend/ent/generated"
+	"github.com/niwla23/noteqr/backend/ent/generated/document"
+	"github.com/niwla23/noteqr/backend/ent/generated/documentfile"
+	"github.com/niwla23/noteqr/backend/ent/generated/user"
+	"github.com/niwla23/noteqr/backend/monitoring"
+	"github.com/niwla23/noteqr/backend/types"
+)
+
+type DocumentUpdateData struct {
+	Content       string `json:"content"`
+	IsPublic      bool   `json:"isPublic"`
+	IsPublicWrite bool   `json:"isPublicWrite"`
+	RedirectUrl   string `json:"redirectUrl"`
+}
+
+func RegisterDocumentRoutes(router fiber.Router, client *ent_gen.Client, config types.AppConfig) {
+	// create document (will be completly empty, not accessible by user)
+	router.Post("/", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+
+		if err != nil {
+			return err
+		}
+
+		if !userX.IsAdmin {
+			return fiber.NewError(fiber.StatusForbidden, "only admins can create documents")
+		}
+
+		doc, err := client.Document.Create().
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(doc)
+	})
+
+	// update document
+	// if document is not activated, it will be activated for the current user
+	router.Put("/:documentID", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUser(c)
+
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		// parse request body
+		data := new(DocumentUpdateData)
+		if err := c.BodyParser(data); err != nil {
+			return err
+		}
+
+		// get document from db
+		doc, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			WithOwner().
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		isOwner := false
+		canEdit := doc.IsPublicWrite
+		if userX != nil {
+			canEdit = doc.Edges.Owner.ID == userX.ID || doc.IsPublicWrite
+			isOwner = doc.Edges.Owner.ID == userX.ID
+		}
+
+		if doc.Edges.Owner != nil && !canEdit {
+			return fiber.NewError(fiber.StatusForbidden, "you do not own this document")
+		}
+
+		if !isOwner {
+			// check that no settings are modified
+			if data.IsPublic != doc.IsPublic {
+				return fiber.NewError(fiber.StatusForbidden, "you can not change these settings")
+			}
+			if data.IsPublicWrite != doc.IsPublicWrite {
+				return fiber.NewError(fiber.StatusForbidden, "you can not change these settings")
+			}
+		}
+
+		updateBuilder := doc.Update()
+
+		// if document is not activated, activate it for the current user
+		if doc.Edges.Owner == nil {
+
+			if userX == nil {
+				return fiber.NewError(fiber.StatusUnauthorized, "you need to login to activate this document")
+			}
+
+			updateBuilder = updateBuilder.SetOwner(userX)
+			updateBuilder = updateBuilder.SetActivatedAt(time.Now())
+		}
+
+		// update document with request data
+		doc, err = updateBuilder.
+			SetContent(data.Content).
+			SetRedirectUrl(data.RedirectUrl).
+			SetIsPublic(data.IsPublic).
+			SetIsPublicWrite(data.IsPublicWrite).
+			SetUpdatedAt(time.Now()).
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		monitoring.CodesUpdateCount.Inc()
+		return c.JSON(doc)
+	})
+
+	// add file to document
+	router.Post("/:documentId/files", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+		if err != nil {
+			return err
+		}
+
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		form, err := c.MultipartForm()
+		if err != nil {
+			return fiber.NewError(400, "please send a multipart form")
+		}
+
+		files := form.File["file"]
+
+		// get document from db
+		documentX, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			Where(document.HasOwnerWith(user.ID(userX.ID))).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		if len(files) != 1 {
+			return fiber.NewError(400, "please send exactly one file")
+		}
+		file := files[0]
+
+		fileId := uuid.New()
+		fp := filepath.Join(config.StoragePath, fileId.String())
+		err = c.SaveFile(file, fp)
+		if err != nil {
+			return err
+		}
+
+		fileResp, err := client.DocumentFile.
+			Create().
+			SetID(fileId).
+			SetDocument(documentX).
+			SetFilename(file.Filename).
+			SetSizeBytes(file.Size).
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(fileResp)
+	})
+
+	// download file
+	router.Get("/:documentId/files/:fileId", func(c *fiber.Ctx) error {
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		fileID, err := uuid.Parse(c.Params("fileID"))
+		if err != nil {
+			return err
+		}
+
+		fileX, err := client.DocumentFile.Query().
+			Where(documentfile.ID(fileID)).
+			Where(documentfile.HasDocumentWith(document.ID(documentID))).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		c.Set("content-disposition", fmt.Sprintf("filename=\"%s\"", fileX.Filename))
+		return c.SendFile(filepath.Join(config.StoragePath, fileX.ID.String()), true)
+	})
+
+	// deactivate document
+	router.Delete("/:documentID", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+		if err != nil {
+			return err
+		}
+
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		// get document from db
+		doc, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			Where(document.HasOwnerWith(user.ID(userX.ID))).
+			WithOwner().
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		updateBuilder := doc.Update()
+
+		// update document with request data
+		doc, err = updateBuilder.
+			SetActivatedAt(time.Time{}).
+			ClearOwner().
+			SetContent("").
+			SetRedirectUrl("").
+			SetIsPublic(true).
+			SetUpdatedAt(time.Now()).
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(doc)
+	})
+
+	// get all documents for user
+	router.Get("/", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+		if err != nil {
+			return err
+		}
+
+		allDocs, err := client.Document.Query().
+			WithOwner().
+			Where(document.HasOwnerWith(user.ID(userX.ID))).
+			Order(ent_gen.Desc(document.FieldUpdatedAt)).
+			All(c.Context())
+		if err != nil {
+			return err
+		}
+
+		// truncate content to first characters
+		for _, doc := range allDocs {
+			if len(doc.Content) > 500 {
+				doc.Content = doc.Content[:500]
+			}
+		}
+
+		return c.JSON(allDocs)
+	})
+
+	// get document by id
+	router.Get("/:documentID", func(c *fiber.Ctx) error {
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		userX, userErr := auth.GetUser(c)
+		isAuthenticated := userErr == nil
+
+		// get document from db
+		doc, err := client.Document.Query().
+			WithOwner().
+			Where(document.ID(documentID)).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		if doc.ActivatedAt.IsZero() && doc.Edges.Owner == nil {
+			// document is not yet activated and not owned by user
+			return fiber.NewError(fiber.StatusNotAcceptable, "document not activated")
+		}
+
+		if isAuthenticated && doc.Edges.Owner.ID != userX.ID && !doc.IsPublic {
+			// document is not owned by user
+			return fiber.NewError(fiber.StatusForbidden, "you do not own this document")
+		}
+
+		if !isAuthenticated && !doc.IsPublic {
+			// unauthenticated user tries to access non-public document
+			return fiber.NewError(fiber.StatusForbidden, "you need to login")
+		}
+
+		// get document from db without sensitive data
+		doc2, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		isOwner := false
+		if userErr == nil && doc.Edges.Owner.ID == userX.ID {
+			isOwner = true
+		}
+
+		return c.JSON(&fiber.Map{"isOwner": isOwner, "document": doc2})
+	})
+}
+package handlers
+
+import (
+	"fmt"
+	"path/filepath"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+	"github.com/niwla23/noteqr/backend/auth"
+	ent_gen "github.com/niwla23/noteqr/backend/ent/generated"
+	"github.com/niwla23/noteqr/backend/ent/generated/document"
+	"github.com/niwla23/noteqr/backend/ent/generated/documentfile"
+	"github.com/niwla23/noteqr/backend/ent/generated/user"
+	"github.com/niwla23/noteqr/backend/monitoring"
+	"github.com/niwla23/noteqr/backend/types"
+)
+
+type DocumentUpdateData struct {
+	Content       string `json:"content"`
+	IsPublic      bool   `json:"isPublic"`
+	IsPublicWrite bool   `json:"isPublicWrite"`
+	RedirectUrl   string `json:"redirectUrl"`
+}
+
+func RegisterDocumentRoutes(router fiber.Router, client *ent_gen.Client, config types.AppConfig) {
+	// create document (will be completly empty, not accessible by user)
+	router.Post("/", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+
+		if err != nil {
+			return err
+		}
+
+		if !userX.IsAdmin {
+			return fiber.NewError(fiber.StatusForbidden, "only admins can create documents")
+		}
+
+		doc, err := client.Document.Create().
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(doc)
+	})
+
+	// update document
+	// if document is not activated, it will be activated for the current user
+	router.Put("/:documentID", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUser(c)
+
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		// parse request body
+		data := new(DocumentUpdateData)
+		if err := c.BodyParser(data); err != nil {
+			return err
+		}
+
+		// get document from db
+		doc, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			WithOwner().
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		isOwner := false
+		canEdit := doc.IsPublicWrite
+		if userX != nil {
+			canEdit = doc.Edges.Owner.ID == userX.ID || doc.IsPublicWrite
+			isOwner = doc.Edges.Owner.ID == userX.ID
+		}
+
+		if doc.Edges.Owner != nil && !canEdit {
+			return fiber.NewError(fiber.StatusForbidden, "you do not own this document")
+		}
+
+		if !isOwner {
+			// check that no settings are modified
+			if data.IsPublic != doc.IsPublic {
+				return fiber.NewError(fiber.StatusForbidden, "you can not change these settings")
+			}
+			if data.IsPublicWrite != doc.IsPublicWrite {
+				return fiber.NewError(fiber.StatusForbidden, "you can not change these settings")
+			}
+		}
+
+		updateBuilder := doc.Update()
+
+		// if document is not activated, activate it for the current user
+		if doc.Edges.Owner == nil {
+
+			if userX == nil {
+				return fiber.NewError(fiber.StatusUnauthorized, "you need to login to activate this document")
+			}
+
+			updateBuilder = updateBuilder.SetOwner(userX)
+			updateBuilder = updateBuilder.SetActivatedAt(time.Now())
+		}
+
+		// update document with request data
+		doc, err = updateBuilder.
+			SetContent(data.Content).
+			SetRedirectUrl(data.RedirectUrl).
+			SetIsPublic(data.IsPublic).
+			SetIsPublicWrite(data.IsPublicWrite).
+			SetUpdatedAt(time.Now()).
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		monitoring.CodesUpdateCount.Inc()
+		return c.JSON(doc)
+	})
+
+	// add file to document
+	router.Post("/:documentId/files", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+		if err != nil {
+			return err
+		}
+
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		form, err := c.MultipartForm()
+		if err != nil {
+			return fiber.NewError(400, "please send a multipart form")
+		}
+
+		files := form.File["file"]
+
+		// get document from db
+		documentX, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			Where(document.HasOwnerWith(user.ID(userX.ID))).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		if len(files) != 1 {
+			return fiber.NewError(400, "please send exactly one file")
+		}
+		file := files[0]
+
+		fileId := uuid.New()
+		fp := filepath.Join(config.StoragePath, fileId.String())
+		err = c.SaveFile(file, fp)
+		if err != nil {
+			return err
+		}
+
+		fileResp, err := client.DocumentFile.
+			Create().
+			SetID(fileId).
+			SetDocument(documentX).
+			SetFilename(file.Filename).
+			SetSizeBytes(file.Size).
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(fileResp)
+	})
+
+	// download file
+	router.Get("/:documentId/files/:fileId", func(c *fiber.Ctx) error {
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		fileID, err := uuid.Parse(c.Params("fileID"))
+		if err != nil {
+			return err
+		}
+
+		fileX, err := client.DocumentFile.Query().
+			Where(documentfile.ID(fileID)).
+			Where(documentfile.HasDocumentWith(document.ID(documentID))).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		c.Set("content-disposition", fmt.Sprintf("filename=\"%s\"", fileX.Filename))
+		return c.SendFile(filepath.Join(config.StoragePath, fileX.ID.String()), true)
+	})
+
+	// deactivate document
+	router.Delete("/:documentID", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+		if err != nil {
+			return err
+		}
+
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		// get document from db
+		doc, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			Where(document.HasOwnerWith(user.ID(userX.ID))).
+			WithOwner().
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		updateBuilder := doc.Update()
+
+		// update document with request data
+		doc, err = updateBuilder.
+			SetActivatedAt(time.Time{}).
+			ClearOwner().
+			SetContent("").
+			SetRedirectUrl("").
+			SetIsPublic(true).
+			SetUpdatedAt(time.Now()).
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(doc)
+	})
+
+	// get all documents for user
+	router.Get("/", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+		if err != nil {
+			return err
+		}
+
+		allDocs, err := client.Document.Query().
+			WithOwner().
+			Where(document.HasOwnerWith(user.ID(userX.ID))).
+			Order(ent_gen.Desc(document.FieldUpdatedAt)).
+			All(c.Context())
+		if err != nil {
+			return err
+		}
+
+		// truncate content to first characters
+		for _, doc := range allDocs {
+			if len(doc.Content) > 500 {
+				doc.Content = doc.Content[:500]
+			}
+		}
+
+		return c.JSON(allDocs)
+	})
+
+	// get document by id
+	router.Get("/:documentID", func(c *fiber.Ctx) error {
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		userX, userErr := auth.GetUser(c)
+		isAuthenticated := userErr == nil
+
+		// get document from db
+		doc, err := client.Document.Query().
+			WithOwner().
+			Where(document.ID(documentID)).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		if doc.ActivatedAt.IsZero() && doc.Edges.Owner == nil {
+			// document is not yet activated and not owned by user
+			return fiber.NewError(fiber.StatusNotAcceptable, "document not activated")
+		}
+
+		if isAuthenticated && doc.Edges.Owner.ID != userX.ID && !doc.IsPublic {
+			// document is not owned by user
+			return fiber.NewError(fiber.StatusForbidden, "you do not own this document")
+		}
+
+		if !isAuthenticated && !doc.IsPublic {
+			// unauthenticated user tries to access non-public document
+			return fiber.NewError(fiber.StatusForbidden, "you need to login")
+		}
+
+		// get document from db without sensitive data
+		doc2, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		isOwner := false
+		if userErr == nil && doc.Edges.Owner.ID == userX.ID {
+			isOwner = true
+		}
+
+		return c.JSON(&fiber.Map{"isOwner": isOwner, "document": doc2})
+	})
+}
+package handlers
+
+import (
+	"fmt"
+	"path/filepath"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+	"github.com/niwla23/noteqr/backend/auth"
+	ent_gen "github.com/niwla23/noteqr/backend/ent/generated"
+	"github.com/niwla23/noteqr/backend/ent/generated/document"
+	"github.com/niwla23/noteqr/backend/ent/generated/documentfile"
+	"github.com/niwla23/noteqr/backend/ent/generated/user"
+	"github.com/niwla23/noteqr/backend/monitoring"
+	"github.com/niwla23/noteqr/backend/types"
+)
+
+type DocumentUpdateData struct {
+	Content       string `json:"content"`
+	IsPublic      bool   `json:"isPublic"`
+	IsPublicWrite bool   `json:"isPublicWrite"`
+	RedirectUrl   string `json:"redirectUrl"`
+}
+
+func RegisterDocumentRoutes(router fiber.Router, client *ent_gen.Client, config types.AppConfig) {
+	// create document (will be completly empty, not accessible by user)
+	router.Post("/", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+
+		if err != nil {
+			return err
+		}
+
+		if !userX.IsAdmin {
+			return fiber.NewError(fiber.StatusForbidden, "only admins can create documents")
+		}
+
+		doc, err := client.Document.Create().
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(doc)
+	})
+
+	// update document
+	// if document is not activated, it will be activated for the current user
+	router.Put("/:documentID", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUser(c)
+
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		// parse request body
+		data := new(DocumentUpdateData)
+		if err := c.BodyParser(data); err != nil {
+			return err
+		}
+
+		// get document from db
+		doc, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			WithOwner().
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		isOwner := false
+		canEdit := doc.IsPublicWrite
+		if userX != nil {
+			canEdit = doc.Edges.Owner.ID == userX.ID || doc.IsPublicWrite
+			isOwner = doc.Edges.Owner.ID == userX.ID
+		}
+
+		if doc.Edges.Owner != nil && !canEdit {
+			return fiber.NewError(fiber.StatusForbidden, "you do not own this document")
+		}
+
+		if !isOwner {
+			// check that no settings are modified
+			if data.IsPublic != doc.IsPublic {
+				return fiber.NewError(fiber.StatusForbidden, "you can not change these settings")
+			}
+			if data.IsPublicWrite != doc.IsPublicWrite {
+				return fiber.NewError(fiber.StatusForbidden, "you can not change these settings")
+			}
+		}
+
+		updateBuilder := doc.Update()
+
+		// if document is not activated, activate it for the current user
+		if doc.Edges.Owner == nil {
+
+			if userX == nil {
+				return fiber.NewError(fiber.StatusUnauthorized, "you need to login to activate this document")
+			}
+
+			updateBuilder = updateBuilder.SetOwner(userX)
+			updateBuilder = updateBuilder.SetActivatedAt(time.Now())
+		}
+
+		// update document with request data
+		doc, err = updateBuilder.
+			SetContent(data.Content).
+			SetRedirectUrl(data.RedirectUrl).
+			SetIsPublic(data.IsPublic).
+			SetIsPublicWrite(data.IsPublicWrite).
+			SetUpdatedAt(time.Now()).
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		monitoring.CodesUpdateCount.Inc()
+		return c.JSON(doc)
+	})
+
+	// add file to document
+	router.Post("/:documentId/files", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+		if err != nil {
+			return err
+		}
+
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		form, err := c.MultipartForm()
+		if err != nil {
+			return fiber.NewError(400, "please send a multipart form")
+		}
+
+		files := form.File["file"]
+
+		// get document from db
+		documentX, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			Where(document.HasOwnerWith(user.ID(userX.ID))).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		if len(files) != 1 {
+			return fiber.NewError(400, "please send exactly one file")
+		}
+		file := files[0]
+
+		fileId := uuid.New()
+		fp := filepath.Join(config.StoragePath, fileId.String())
+		err = c.SaveFile(file, fp)
+		if err != nil {
+			return err
+		}
+
+		fileResp, err := client.DocumentFile.
+			Create().
+			SetID(fileId).
+			SetDocument(documentX).
+			SetFilename(file.Filename).
+			SetSizeBytes(file.Size).
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(fileResp)
+	})
+
+	// download file
+	router.Get("/:documentId/files/:fileId", func(c *fiber.Ctx) error {
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		fileID, err := uuid.Parse(c.Params("fileID"))
+		if err != nil {
+			return err
+		}
+
+		fileX, err := client.DocumentFile.Query().
+			Where(documentfile.ID(fileID)).
+			Where(documentfile.HasDocumentWith(document.ID(documentID))).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		c.Set("content-disposition", fmt.Sprintf("filename=\"%s\"", fileX.Filename))
+		return c.SendFile(filepath.Join(config.StoragePath, fileX.ID.String()), true)
+	})
+
+	// deactivate document
+	router.Delete("/:documentID", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+		if err != nil {
+			return err
+		}
+
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		// get document from db
+		doc, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			Where(document.HasOwnerWith(user.ID(userX.ID))).
+			WithOwner().
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		updateBuilder := doc.Update()
+
+		// update document with request data
+		doc, err = updateBuilder.
+			SetActivatedAt(time.Time{}).
+			ClearOwner().
+			SetContent("").
+			SetRedirectUrl("").
+			SetIsPublic(true).
+			SetUpdatedAt(time.Now()).
+			Save(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(doc)
+	})
+
+	// get all documents for user
+	router.Get("/", func(c *fiber.Ctx) error {
+		userX, err := auth.GetUserAuthRequired(c)
+		if err != nil {
+			return err
+		}
+
+		allDocs, err := client.Document.Query().
+			WithOwner().
+			Where(document.HasOwnerWith(user.ID(userX.ID))).
+			Order(ent_gen.Desc(document.FieldUpdatedAt)).
+			All(c.Context())
+		if err != nil {
+			return err
+		}
+
+		// truncate content to first characters
+		for _, doc := range allDocs {
+			if len(doc.Content) > 500 {
+				doc.Content = doc.Content[:500]
+			}
+		}
+
+		return c.JSON(allDocs)
+	})
+
+	// get document by id
+	router.Get("/:documentID", func(c *fiber.Ctx) error {
+		documentID, err := uuid.Parse(c.Params("documentID"))
+		if err != nil {
+			return err
+		}
+
+		userX, userErr := auth.GetUser(c)
+		isAuthenticated := userErr == nil
+
+		// get document from db
+		doc, err := client.Document.Query().
+			WithOwner().
+			Where(document.ID(documentID)).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		if doc.ActivatedAt.IsZero() && doc.Edges.Owner == nil {
+			// document is not yet activated and not owned by user
+			return fiber.NewError(fiber.StatusNotAcceptable, "document not activated")
+		}
+
+		if isAuthenticated && doc.Edges.Owner.ID != userX.ID && !doc.IsPublic {
+			// document is not owned by user
+			return fiber.NewError(fiber.StatusForbidden, "you do not own this document")
+		}
+
+		if !isAuthenticated && !doc.IsPublic {
+			// unauthenticated user tries to access non-public document
+			return fiber.NewError(fiber.StatusForbidden, "you need to login")
+		}
+
+		// get document from db without sensitive data
+		doc2, err := client.Document.Query().
+			Where(document.ID(documentID)).
+			Only(c.Context())
+
+		if err != nil {
+			return err
+		}
+
+		isOwner := false
+		if userErr == nil && doc.Edges.Owner.ID == userX.ID {
+			isOwner = true
+		}
+
+		return c.JSON(&fiber.Map{"isOwner": isOwner, "document": doc2})
+	})
+}

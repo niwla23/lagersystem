@@ -1,10 +1,10 @@
-import React, { useEffect } from "react"
+import React, { useEffect, useState } from "react"
 import clsx from "clsx"
 import PartCard from "../components/partCard"
 import * as api from "../api"
 import { PartModel } from "../types"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faArrowLeft, faCancel, faDeleteLeft, faPen, faPlug, faTruckRampBox, faXmark } from "@fortawesome/free-solid-svg-icons"
+import { faArrowLeft, faPen, faPlug, faXmark } from "@fortawesome/free-solid-svg-icons"
 import { useNavigate } from "react-router-dom"
 import Swal from "sweetalert2"
 import { isAxiosError } from "axios"
@@ -14,6 +14,8 @@ export default function Home() {
   let [parts, setParts] = React.useState<PartModel[]>([])
   let [searchQuery, setSearchQuery] = React.useState("")
   let [filter, setFilter] = React.useState("")
+  let [kbNavEnabled, setKbNavEnabled] = useState(false)
+  let [kbNavSelectedItem, setKbNavSelectedItem] = useState(0)
   let [selectedParts, setSelectedParts] = React.useState<number[]>([])
 
   const loadAllParts = async () => {
@@ -97,9 +99,7 @@ export default function Home() {
 
   useEffect(() => {
     loadAllParts()
-  }, [searchQuery, filter])
 
-  useEffect(() => {
     let x = setInterval(() => {
       loadAllParts()
     }, 1000)
@@ -107,7 +107,10 @@ export default function Home() {
     return () => {
       clearInterval(x)
     }
-  })
+  }, [searchQuery, filter])
+
+  useEffect(() => {
+  }, [])
 
   if (!Array.isArray(parts)) {
     parts = []

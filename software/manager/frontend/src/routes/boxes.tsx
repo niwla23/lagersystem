@@ -19,7 +19,7 @@ function makeCanvas(positions: OperatorPositionsResponse) {
     const x = width - coord["x"]
     const y = height - coord["y"]
 
-    ctx.fillStyle = coord.boxId ? "rgb(200, 100, 0)" : "rgb(0, 0, 0)"
+    ctx.fillStyle = coord.box ? (coord.box.parts ? "rgb(200, 100, 0)" : "rgb(0, 100, 50)") : "rgb(0, 0, 0)"
     ctx.fillRect(x, y, 68, 36)
     ctx.fillStyle = "rgb(255, 255, 255)"
     ctx.fillText(posId, x + 20, y + 20)
@@ -34,13 +34,13 @@ export default function Boxes() {
   const canvasRef = React.useRef<HTMLCanvasElement>(null)
 
   const deliverBox = async (boxId: string) => {
-    await api.deliverBox(positions.positions[boxId].boxId)
+    await api.deliverBox(positions.positions[boxId].box!.id)
   }
 
   const showPosition = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedPosition) return
-    let boxId = positions.positions[selectedPosition].boxId
+    let boxId = positions.positions[selectedPosition].box?.id
     MySwal.fire({
       title: `Position ${selectedPosition}`,
       html: (
@@ -92,13 +92,13 @@ export default function Boxes() {
       <div className="bg-base-100 p-4 m-4">
         <p>Deliver empty boxes</p>
         <div className="flex gap-2 max-w-lg">
-          <button className="btn flex-1" onClick={()=>deliverEmpty(1)}>
+          <button className="btn flex-1" onClick={() => deliverEmpty(1)}>
             Deliver 1
           </button>
-          <button className="btn flex-1" onClick={()=>deliverEmpty(2)}>
+          <button className="btn flex-1" onClick={() => deliverEmpty(2)}>
             Deliver 2
           </button>
-          <button className="btn flex-1" onClick={()=>deliverEmpty(3)}>
+          <button className="btn flex-1" onClick={() => deliverEmpty(3)}>
             Deliver 3
           </button>
         </div>

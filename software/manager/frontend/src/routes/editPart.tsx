@@ -1,6 +1,6 @@
 import { useLoaderData, useNavigate, useRevalidator } from "react-router-dom"
 import { PartModel, UpdatePartData } from "../types"
-import { useState } from "react"
+import { MouseEventHandler, useState } from "react"
 import { Controller, SubmitHandler, useForm } from "react-hook-form"
 import { AddPartDataForm } from "../components/partAddDataForm"
 import * as api from "../api"
@@ -44,7 +44,7 @@ export default function EditPart() {
     })
   }
 
-  const handleDelete = async (e: Event) => {
+  const handleDelete = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault()
     if (!confirm("Really delete?")) {
       return
@@ -58,7 +58,7 @@ export default function EditPart() {
   const deliverEmptyBox = async () => {
     try {
       const emptyBox = await api.getEmptyBox()
-      await api.deliverBox(emptyBox.id, "1")
+      await api.deliverBox(emptyBox.id)
     } catch (e) {
       alert("no free box found")
       return
@@ -83,7 +83,10 @@ export default function EditPart() {
       await api.updatePart(
         partData.id,
         {
-          ...(partData as UpdatePartData),
+          name: partData.name,
+          description: partData.description,
+          properties: {},
+          amount: partData.amount,
           boxId: resp.boxId,
           tags: partData.tags?.map((i) => i.name) || [],
         },
@@ -110,7 +113,10 @@ export default function EditPart() {
     await api.updatePart(
       partData.id,
       {
-        ...(partData as UpdatePartData),
+        name: partData.name,
+        description: partData.description,
+        properties: {},
+        amount: partData.amount,
         boxId: null,
         tags: partData.tags?.map((i) => i.name) || [],
       },
