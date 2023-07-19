@@ -11,9 +11,9 @@ export default defineConfig({
       injectRegister: "auto",
       devOptions: { enabled: true },
       manifest: {
-        name: "PWA App",
-        short_name: "",
-        description: "Allows you to pin custom text to your notifications",
+        name: "Lagersystem",
+        short_name: "Lagersystem",
+        description: "Store and Deliver Boxes",
         theme_color: "#14b8a5",
         icons: [
           {
