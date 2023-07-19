@@ -5,6 +5,8 @@ services:
     restart: "always"
     volumes:
       - ./docker_data/typesense:/data
+    networks:
+      - internal
     command: '--data-dir /data --api-key=xyz --enable-cors'
 
   app:
@@ -16,13 +18,23 @@ services:
       - "6969:3001"
     volumes:
       - "./docker_data/app:/data"
+    networks:
+      - traefik
+      - internal
     environment:
       STORAGE_PATH: "/data/images"
       DB_URI: "file:///data/db.sqlite?_fk=1"
       TYPESENSE_URI: "http://typesense:8108"
       OPERATOR_BASE_URL: "http://192.168.178.64:5000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lagersystem.rule=Host(`lagersystem.b49.cloudserver.click`)"
+      - "traefik.http.routers.lagersystem.tls.certresolver=le_main"
+      - "traefik.http.services.lagersystem.loadbalancer.server.port=3001"
 
 volumes:
   typesense-data:
-
-
+networks:
+  internal:
+  traefik:
+    name: traefik
