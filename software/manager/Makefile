@@ -5,4 +5,5 @@ generate:
 	go generate ./ent
 
 dev:
-	STORAGE_PATH=./data/images DB_URI=file:///home/alwin/Dokumente/projects/lagersystem/software/manager/data/db.sqlite?_fk=1 go run main.go
+	OPERATOR_BASE_URL="http://192.168.178.64:5000" TYPESENSE_URI="http://localhost:8108" STORAGE_PATH=./data/images DB_URI=file:///home/alwin/Dokumente/projects/lagersystem/software/manager/data/db.sqlite?_fk=1 go run main.go
+

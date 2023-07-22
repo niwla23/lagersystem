@@ -8,8 +8,9 @@ import AddPart from "./routes/addPart"
 import Boxes from "./routes/boxes"
 import HomeRoute from "./routes/home"
 import EditPart from "./routes/editPart"
-import * as api from "./api" 
+import * as api from "./api"
 import StoreBox from "./routes/storeBox"
+import { ScanBox } from "./routes/scanBox"
 
 const router = createBrowserRouter([
   {
@@ -23,7 +24,7 @@ const router = createBrowserRouter([
       {
         path: "/boxes",
         element: <Boxes />,
-        loader: async ({params}) => {
+        loader: async ({ params }) => {
           return await api.getPositions();
         },
       },
@@ -32,13 +33,17 @@ const router = createBrowserRouter([
         element: <StoreBox />,
       },
       {
+        path: "/boxes/scan",
+        element: <ScanBox />,
+      },
+      {
         path: "/parts/add",
         element: <AddPart />,
       },
       {
         path: "/parts/edit/:partId",
         element: <EditPart />,
-        loader: async ({params}) => {
+        loader: async ({ params }) => {
           return await api.getPartById(Number(params.partId));
         },
       },

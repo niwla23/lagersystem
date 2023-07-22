@@ -27,7 +27,7 @@ export interface BoxModel {
   id: UUID
   createdAt: Date
   updatedAt: Date
-  parts?: PartModel
+  parts?: PartModel[]
   position?: PositionModel
 }
 

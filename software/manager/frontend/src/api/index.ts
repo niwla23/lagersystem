@@ -99,6 +99,11 @@ export async function getEmptyBox(): Promise<BoxModel> {
   return resp.data
 }
 
+export async function getBoxById(boxId: string): Promise<BoxModel> {
+  const resp = await axios.get(`/api/boxes/${boxId}`)
+  return resp.data
+}
+
 export async function getAllTags(): Promise<TagModel[]> {
   let resp = await fetch("/api/tags")
   return await resp.json()

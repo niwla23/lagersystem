@@ -60,6 +60,18 @@ func RegisterBoxRoutes(router fiber.Router, client *ent.Client, ctx context.Cont
 		return c.JSON(box)
 	})
 
+	router.Get("/:boxId", func(c *fiber.Ctx) error {
+		boxId, err := uuid.Parse(c.Params("boxId"))
+		if err != nil {
+			return err
+		}
+		boxX, err := client.Box.Query().Where(box.ID(boxId)).WithParts().WithPosition().Only(ctx)
+		if err != nil {
+			return err
+		}
+		return c.JSON(boxX)
+	})
+
 	// router.Get("/get-by-scanner", func(c *fiber.Ctx) error {
 	// 	boxX, err := helpers.ScanIoPos()
 	// 	if err != nil {
