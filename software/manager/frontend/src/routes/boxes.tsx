@@ -1,5 +1,5 @@
 import React, { useEffect } from "react"
-import { useLoaderData } from "react-router-dom"
+import { Link, useLoaderData } from "react-router-dom"
 import { OperatorPositionsResponse } from "../types"
 import Swal from "sweetalert2"
 import withReactContent from "sweetalert2-react-content"
@@ -76,18 +76,25 @@ export default function Boxes() {
     <div className="w-full overflow-x-clip h-screen overflow-y-clip md:h-full">
       <div className="bg-base-100 p-4 m-4">
         <p>Enter any position id to see details</p>
-        <form className="input-group" onSubmit={showPosition}>
-          <input
-            type="number"
-            placeholder="69"
-            className="input input-bordered w-full"
-            value={selectedPosition}
-            onChange={(e) => setSelectedBox(e.target.value)}
-          />
-          <button className="btn" type="submit">
-            Go
-          </button>
-        </form>
+        <div className="flex gap-2">
+          <form className="input-group" onSubmit={showPosition}>
+            <input
+              type="number"
+              placeholder="69"
+              className="input input-bordered w-full"
+              value={selectedPosition}
+              onChange={(e) => setSelectedBox(e.target.value)}
+            />
+            <button className="btn" type="submit">
+              Go
+            </button>
+          </form>
+          <Link to="/boxes/scan">
+            <button className="btn">
+              Scanner
+            </button>
+          </Link>
+        </div>
       </div>
       <div className="bg-base-100 p-4 m-4">
         <p>Deliver empty boxes</p>
