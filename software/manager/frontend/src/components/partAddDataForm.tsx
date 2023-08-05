@@ -31,7 +31,7 @@ export default function PartAddDataForm(props: Props) {
   const onSubmit: SubmitHandler<AddPartDataForm> = (data) => {
     let tags: string[] = []
     if (data.tags) {
-      let tags = data.tags.split(",").map((tag) => tag.trim())
+      tags = data.tags.split(",").map((tag) => tag.trim())
       tags = tags.filter((t) => t !== "") // no empty tags
     }
     let creationData: CreatePartData = {
@@ -41,7 +41,6 @@ export default function PartAddDataForm(props: Props) {
       properties: {},
       amount: -1,
     }
-
     props.submit(creationData, selectedFile)
   }
 
