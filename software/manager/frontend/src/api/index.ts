@@ -28,8 +28,13 @@ export async function getPartById(partId: number): Promise<PartModel> {
   return await resp.json()
 }
 
-export async function searchParts(query: string, filter: string): Promise<PartModel[]> {
-  let params = new URLSearchParams({ q: query, filter })
+interface PartSearchResponse {
+  parts: PartModel[]
+  totalPages: number
+}
+
+export async function searchParts(query: string, filter: string, page: number | undefined): Promise<PartSearchResponse> {
+  let params = new URLSearchParams({ q: query, filter, page: (page || 1).toString() })
 
   let resp = await fetch(`/api/parts/search?${params.toString()}`)
   return await resp.json()

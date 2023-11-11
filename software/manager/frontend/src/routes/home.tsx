@@ -12,6 +12,8 @@ import { isAxiosError } from "axios"
 export default function Home() {
   const navigate = useNavigate()
   let [parts, setParts] = React.useState<PartModel[]>([])
+  let [totalPages, setTotalPages] = React.useState(1)
+  let [page, setPage] = React.useState(1)
   let [searchQuery, setSearchQuery] = React.useState("")
   let [filter, setFilter] = React.useState("")
   let [kbNavEnabled, setKbNavEnabled] = useState(false)
@@ -19,8 +21,10 @@ export default function Home() {
   let [selectedParts, setSelectedParts] = React.useState<number[]>([])
 
   const loadAllParts = async () => {
-    let x = await api.searchParts(searchQuery, filter)
-    setParts(x)
+    let x = await api.searchParts(searchQuery, filter, page)
+
+    setParts(x.parts)
+    setTotalPages(x.totalPages)
   }
 
   const handleSelectChanged = (partId: number, selected: boolean) => {
@@ -29,6 +33,12 @@ export default function Home() {
     } else {
       setSelectedParts(selectedParts.filter((x) => x != partId))
     }
+  }
+
+
+  const navigatePage = (pageNumber: number) => {
+    setPage(pageNumber)
+    loadAllParts()
   }
 
   const deliverPart = async (partId: number) => {
@@ -107,7 +117,9 @@ export default function Home() {
     return () => {
       clearInterval(x)
     }
-  }, [searchQuery, filter])
+  }, [searchQuery, filter, page])
+
+  useEffect(() => setPage(1), [searchQuery, filter])
 
   useEffect(() => {
   }, [])
@@ -155,6 +167,15 @@ export default function Home() {
     )
   })
 
+  let renderedPages = []
+  for (let i = 1; i <= totalPages; i++) {
+    if (i == page) {
+      renderedPages.push(<button key={"page" + i} className="bg-primary p-2 rounded-md">Page {i}</button>)
+    } else {
+      renderedPages.push(<button key={"page" + i} className="bg-secondary p-2 rounded-md" onClick={() => navigatePage(i)}>Page {i}</button>)
+    }
+  }
+
   return (
     <div className="h-full p-4">
       <div className="input-group w-full">
@@ -187,6 +208,13 @@ export default function Home() {
         </div>
       </div>
       <main className="grid gap-2">{renderedParts}</main>
+      <div className="mt-4">
+        <div className="w-full flex gap-2">
+          <button className="w-full btn-primary p-2 rounded-md" onClick={() => navigatePage(page - 1)} disabled={page == 1}>Prev</button>
+          <button className="w-full btn-primary p-2 rounded-md" onClick={() => navigatePage(page + 1)} disabled={page == totalPages}>Next</button>
+        </div>
+        <div className="flex flex-col gap-2 text-black mt-2">{renderedPages}</div>
+      </div>
       <div
         className={clsx("fixed right-0 top-0 h-full flex flex-col justify-center transform transition-all", {
           "translate-x-40": selectedParts.length == 0,

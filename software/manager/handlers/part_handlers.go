@@ -306,9 +306,16 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 	router.Get("/search", func(c *fiber.Ctx) error {
 		query := c.Query("q")
 		filter := c.Query("filter")
+		page := c.QueryInt("page")
+
+		if page == 0 {
+			page = 1
+		}
+
+		perPage := 100
 
 		searchResult, err := typesense_wrapper.TypesenseClient.Collection("parts").Documents().Search(
-			&api.SearchCollectionParams{FilterBy: &filter, Q: query, QueryBy: "name,tags,description"},
+			&api.SearchCollectionParams{FilterBy: &filter, Q: query, PerPage: &perPage, Page: &page, QueryBy: "name,tags,description"},
 		)
 		if err != nil {
 			return err
@@ -340,7 +347,12 @@ func RegisterPartRoutes(router fiber.Router, client *ent.Client, ctx context.Con
 			parts = append(parts, part)
 		}
 
-		return c.JSON(parts)
+		totalPages := *searchResult.Found / perPage
+		if *searchResult.Found%perPage != 0 {
+			totalPages += 1
+		}
+
+		return c.JSON(fiber.Map{"parts": parts, "totalPages": totalPages})
 	})
 
 	router.Delete("/:partId<int>", func(c *fiber.Ctx) error {
