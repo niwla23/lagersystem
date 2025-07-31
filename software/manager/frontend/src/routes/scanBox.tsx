@@ -1,6 +1,9 @@
 
+import { faPen } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useState } from 'react';
 import { OnResultFunction, QrReader } from 'react-qr-reader';
+import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import * as api from "../api"
 import PartCard from '../components/partCard';
@@ -12,6 +15,7 @@ declare global {
 }
 
 export const ScanBox = () => {
+  const navigate = useNavigate()
   const [scannedId, setScannedId] = useState('No result');
   const [boxData, setBoxData] = useState<BoxModel | null>(null)
 
@@ -38,6 +42,33 @@ export const ScanBox = () => {
     }
   }
 
+  const clearBox = async () => {
+    let result = await Swal.fire({
+      title: "Disconnect all parts from this box?",
+      showDenyButton: true,
+      confirmButtonText: "Yes",
+      denyButtonText: `No`,
+    })
+    if (!result.isConfirmed) return
+
+    for (const part of boxData.parts) {
+      await api.updatePart(
+        part.id,
+        {
+          name: part.name,
+          description: part.description,
+          properties: {},
+          amount: part.amount,
+          boxId: null,
+          tags: part.tags?.map((i) => i.name) || [],
+        },
+        undefined
+      )
+    }
+
+    await loadBoxData(scannedId)
+  }
+
   let dataArea = <p>Please scan a box</p>
   if (scannedId != "No result") {
     dataArea = <p><span className='text-sm bg-gray-800'>{scannedId}</span> is not known.</p>
@@ -55,7 +86,17 @@ export const ScanBox = () => {
           positionId={part.box?.position?.id}
           tags={[]}
           properties={[]}
-          actions={[]}
+          actions={[
+            <button
+              key={"edit"}
+              className="btn btn-secondary"
+              onClick={() => {
+                navigate(`/parts/edit/${part.id}`)
+              }}
+            >
+              <FontAwesomeIcon icon={faPen} />
+            </button>,
+          ]}
           checked={false}
           onCheckChanged={() => { }}
           onTagClick={() => { }}
@@ -67,6 +108,9 @@ export const ScanBox = () => {
       <div>
         <p><span className='text-sm bg-gray-800'>{scannedId}</span> is known.</p>
         <p>Stored at: {boxData.position?.id || "not stored"}</p>
+        <button onClick={clearBox} className="btn btn-error w-full mb-4">
+          Clear Box
+        </button>
         <div className='flex flex-col gap-2'>
           {renderedParts}
         </div>
